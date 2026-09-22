@@ -1,0 +1,26 @@
+#!/bin/sh
+# Runs the Go test suite twice: on SQLite and on a throwaway PostgreSQL.
+# Each checkout (Orca worktree) gets its own Postgres container and port, so parallel agents
+# never share a database. Stop it with: docker stop "$(./scripts/test --pg-name)"
+set -e
+cd "$(dirname "$0")/.."
+
+id=$(pwd | cksum | cut -d' ' -f1)
+name="slowpoke-test-pg-$id"
+port=$((55432 + id % 1000))
+if [ "$1" = "--pg-name" ]; then
+  echo "$name"
+  exit 0
+fi
+
+./scripts/go test "$@" ./...
+
+if ! docker ps --format '{{.Names}}' | grep -q "^$name\$"; then
+  docker run -d --rm --name "$name" -e POSTGRES_PASSWORD=test -e POSTGRES_DB=slowpoke -p "$port:5432" postgres:17-alpine >/dev/null
+  until docker exec "$name" pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done
+  sleep 1
+fi
+echo "--- PostgreSQL ($name, port $port)"
+docker run --rm -i -v "$(pwd)":/src -w /src -v slowpoke-gomod:/go/pkg/mod -v slowpoke-gobuild:/root/.cache/go-build \
+  -e CGO_ENABLED=0 -e SLOWPOKE_TEST_POSTGRES="postgres://postgres:test@host.docker.internal:$port/slowpoke?sslmode=disable" \
+  golang:1.26-alpine go test "$@" ./internal/server/... ./internal/agent/

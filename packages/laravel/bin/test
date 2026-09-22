@@ -1,0 +1,27 @@
+#!/bin/sh
+# Runs the PHPUnit suite in Docker, nothing installed on the host.
+#   ./bin/test 8.3                      latest Laravel that PHP 8.3 accepts
+#   ./bin/test 7.4                      latest Laravel that PHP 7.4 accepts (8.x)
+#   ./bin/test 7.4 'orchestra/testbench:3.8.*'   Laravel 5.8
+# Extra arguments after the constraint go to PHPUnit (e.g. --filter Origin).
+# Old Laravel releases carry security advisories that Composer 2.9+ refuses: allowed here, for tests only.
+set -eu
+cd "$(dirname "$0")/.."
+php="${1:-8.3}"; shift || true
+with=""
+if [ $# -gt 0 ] && [ "${1#-}" = "$1" ]; then with="$1"; shift; fi
+tag="slowpoke-php-test:$php"
+docker image inspect "$tag" >/dev/null 2>&1 || docker build -q --build-arg PHP="$php" -t "$tag" docker >/dev/null
+# One vendor dir per PHP/Laravel combination, so runs do not reinstall each other's dependencies.
+# It stays under vendor/: the origin finder must see framework frames as third-party code.
+vendor="vendor/$(echo "php$php-$with" | tr -c 'A-Za-z0-9.\n' '-')"
+update="composer update --quiet --no-progress"
+[ -n "$with" ] && update="$update --with '$with'"
+# Inside the Slowpoke repository the shared fixtures in spec/ are mounted too; the standalone
+# package repository runs the same tests without them (the fixture test is then skipped).
+spec=""
+[ -d ../../spec ] && spec="-v $(cd ../../spec && pwd):/repo/spec"
+exec docker run --rm --cpus 1 \
+  -v "$(pwd)":/repo/packages/laravel $spec -v slowpoke-composer-cache:/tmp/cache \
+  -e COMPOSER_CACHE_DIR=/tmp/cache -e COMPOSER_NO_SECURITY_BLOCKING=1 -e COMPOSER_VENDOR_DIR="$vendor" -e UPDATE_FIXTURES="${UPDATE_FIXTURES:-}" \
+  "$tag" sh -c "$update && php $vendor/bin/phpunit $*"

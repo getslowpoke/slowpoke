@@ -1,0 +1,91 @@
+#!/bin/sh
+# Starts the servers the agent reads - Redis, RabbitMQ, Elasticsearch, MongoDB - fills them with
+# sample data, and runs the agent against them. Every source that talks to something else is
+# proved here against the real thing, not against a fixture.
+#
+#   ./scripts/check-stores            start, seed, test, stop
+#   ./scripts/check-stores --keep     leave the servers running afterwards
+#   ./scripts/check-stores --stop     stop them and go away
+#
+# Ports are out of the way (6389, 15679, 9209, 27019) so nothing of yours is touched. It needs
+# about 1.5 GB of the Docker machine, mostly Elasticsearch: run it alone, not next to the lab.
+set -eu
+cd "$(dirname "$0")/.."
+
+names="slowpoke-store-redis slowpoke-store-rabbit slowpoke-store-es slowpoke-store-mongo"
+stop() { for n in $names; do docker rm -f "$n" >/dev/null 2>&1 || true; done; }
+[ "${1:-}" = "--stop" ] && { stop; echo "servers stopped"; exit 0; }
+keep=""
+[ "${1:-}" = "--keep" ] && keep=1
+[ -n "$keep" ] || trap stop EXIT INT TERM
+stop
+
+say() { printf '\n== %s ==\n' "$1"; }
+
+say "starting"
+docker run -d --name slowpoke-store-redis -p 6389:6379 redis:7-alpine redis-server --slowlog-log-slower-than 0 >/dev/null
+docker run -d --name slowpoke-store-rabbit -p 15679:15672 rabbitmq:3-management-alpine >/dev/null
+docker run -d --name slowpoke-store-es -p 9209:9200 -e discovery.type=single-node -e xpack.security.enabled=false \
+	-e "ES_JAVA_OPTS=-Xms512m -Xmx512m" docker.elastic.co/elasticsearch/elasticsearch:8.15.0 >/dev/null
+docker run -d --name slowpoke-store-mongo -p 27019:27017 mongo:7 --slowms 0 >/dev/null
+
+say "waiting for them"
+until docker exec slowpoke-store-redis redis-cli ping >/dev/null 2>&1; do sleep 2; done
+until curl -fsS -u guest:guest http://127.0.0.1:15679/api/overview >/dev/null 2>&1; do sleep 3; done
+until curl -fsS http://127.0.0.1:9209/_cluster/health >/dev/null 2>&1; do sleep 3; done
+until docker exec slowpoke-store-mongo mongosh --quiet --eval 'db.runCommand({ping:1}).ok' >/dev/null 2>&1; do sleep 2; done
+
+say "sample data"
+# Redis: keys, hits and misses, and a command slow enough to be logged.
+docker exec slowpoke-store-redis sh -c '
+for i in $(seq 1 500); do redis-cli SET "order:$i" "{\"total\":$i}" >/dev/null; done
+for i in $(seq 1 200); do redis-cli GET "order:$i" >/dev/null; redis-cli GET "missing:$i" >/dev/null; done
+redis-cli KEYS "order:*" >/dev/null' >/dev/null
+
+# RabbitMQ: a queue with work waiting in it and nobody consuming, which is the case that matters.
+curl -fsS -u guest:guest -X PUT http://127.0.0.1:15679/api/queues/%2f/emails -H 'content-type: application/json' -d '{"durable":true}' >/dev/null
+i=0; while [ $i -lt 40 ]; do
+	curl -fsS -u guest:guest -X POST http://127.0.0.1:15679/api/exchanges/%2f/amq.default/publish \
+		-H 'content-type: application/json' \
+		-d '{"properties":{},"routing_key":"emails","payload":"work","payload_encoding":"string"}' >/dev/null
+	i=$((i + 1))
+done
+# RabbitMQ counts in its own time: the management statistics are a few seconds behind the messages.
+i=0
+while [ "$(curl -fsS -u guest:guest 'http://127.0.0.1:15679/api/queues/%2f/emails' | tr ',' '\n' | sed -n 's/.*"messages_ready":\([0-9]*\).*/\1/p')" = "0" ] && [ $i -lt 20 ]; do
+	sleep 2
+	i=$((i + 1))
+done
+
+# Elasticsearch: documents to search through.
+i=1; while [ $i -le 60 ]; do
+	curl -fsS -X POST http://127.0.0.1:9209/orders/_doc -H 'content-type: application/json' \
+		-d "{\"id\":$i,\"customer\":\"customer $i\",\"status\":\"paid\",\"total\":$((i * 13))}" >/dev/null
+	i=$((i + 1))
+done
+curl -fsS -X POST http://127.0.0.1:9209/orders/_refresh >/dev/null
+
+# MongoDB: a collection with no index, and the queries that have to read all of it.
+docker exec slowpoke-store-mongo mongosh --quiet shop --eval '
+const docs = [];
+for (let i = 0; i < 40000; i++) docs.push({ id: i, customer_id: i % 500, status: i % 7 === 0 ? "refunded" : "paid", total: i % 900 });
+db.orders.insertMany(docs);
+for (let i = 0; i < 5; i++) db.orders.find({ status: "refunded", total: { $gt: 500 } }).toArray().length;
+db.orders.aggregate([{ $match: { status: "paid" } }, { $group: { _id: "$customer_id", n: { $sum: 1 } } }]).toArray().length;
+db.orders.updateMany({ status: "refunded" }, { $set: { checked: true } });' >/dev/null
+docker logs slowpoke-store-mongo 2>&1 | grep '"Slow query"' > /tmp/slowpoke-mongod.log || true
+
+say "the agent, against all four"
+docker run --rm -v "$(pwd)":/src -v /tmp/slowpoke-mongod.log:/tmp/mongod.log:ro -w /src \
+	-v slowpoke-gomod:/go/pkg/mod -v slowpoke-gobuild:/root/.cache/go-build \
+	-e CGO_ENABLED=0 --add-host host.docker.internal:host-gateway \
+	-e REDIS_ADDR=host.docker.internal:6389 \
+	-e RABBITMQ_URL=http://host.docker.internal:15679 \
+	-e ELASTICSEARCH_URL=http://host.docker.internal:9209 \
+	-e MONGO_LOG=/tmp/mongod.log \
+	golang:1.26-alpine go test ./internal/agent/ -count=1 -v \
+	-run 'TestRedisAgainstARealServer|TestRabbitMQAgainstARealBroker|TestElasticsearchAgainstARealCluster|TestMongoSlowLogAgainstARealLog' \
+	2>&1 | grep -E '^(=== RUN|--- (PASS|FAIL|SKIP)|ok|FAIL)|from the '
+
+[ -n "$keep" ] && printf '\nservers left running: ./scripts/check-stores --stop when you are done\n'
+exit 0

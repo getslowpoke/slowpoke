@@ -1,0 +1,1 @@
+{"require": {"laravel/framework": "^11.0", "slowpoke/laravel": "@dev", "open-telemetry/opentelemetry-auto-laravel": "^1.0"}}

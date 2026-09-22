@@ -1,0 +1,166 @@
+# Slowpoke lab: four real apps with real slow patterns, one agent, one server.
+# Start with ./lab/up, stop with ./lab/down. Docker has 2 CPUs here: every service is capped.
+name: slowpoke-lab
+
+x-otel: &otel
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://agent:4318
+  OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+  OTEL_TRACES_EXPORTER: otlp
+  OTEL_METRICS_EXPORTER: none
+  OTEL_LOGS_EXPORTER: none
+
+services:
+  server:
+    image: alpine:3.20
+    command: ["/app/slowpoke-server", "serve"]
+    volumes: ["../bin:/app:ro", "server-data:/data"]
+    environment:
+      SLOWPOKE_DATABASE_URL: sqlite:///data/slowpoke.db
+    ports: ["8089:8080"]
+    cpus: 0.3
+    mem_limit: 256m
+
+  agent:
+    image: alpine:3.20
+    command: ["/app/slowpoke-agent", "-config", "/etc/slowpoke/agent.yaml"]
+    volumes:
+      - ../bin:/app:ro
+      - ./agent.yaml:/etc/slowpoke/agent.yaml:ro
+      - logs:/logs:ro
+      - mysql-logs:/mysql-logs:ro
+      - agent-state:/state
+    env_file: .env
+    depends_on: [server, mariadb, postgres]
+    cpus: 0.2
+    mem_limit: 128m
+
+  # A second machine: it only receives the traces of the express application and never sees the
+  # access log of the web server in front of it.
+  agent2:
+    image: alpine:3.20
+    command: ["/app/slowpoke-agent", "-config", "/etc/slowpoke/agent.yaml"]
+    volumes:
+      - ../bin:/app:ro
+      - ./agent2.yaml:/etc/slowpoke/agent.yaml:ro
+      - agent2-state:/state
+    env_file: .env
+    depends_on: [server]
+    cpus: 0.1
+    mem_limit: 64m
+
+  mariadb:
+    image: mariadb:11.8
+    environment:
+      MARIADB_ROOT_PASSWORD: lab
+      MARIADB_DATABASE: shop
+    command:
+      - --innodb-buffer-pool-size=64M
+      - --performance-schema=ON
+      - --slow-query-log=1
+      - --long-query-time=0.1
+      - --slow-query-log-file=/var/log/mysql/slow.log
+    volumes:
+      - ./db/mariadb.sql:/docker-entrypoint-initdb.d/shop.sql:ro
+      - mysql-logs:/var/log/mysql
+    cpus: 0.5
+    mem_limit: 512m
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: lab
+      POSTGRES_DB: shop
+    command: ["postgres", "-c", "shared_preload_libraries=pg_stat_statements", "-c", "shared_buffers=32MB"]
+    volumes: ["./db/postgres.sql:/docker-entrypoint-initdb.d/shop.sql:ro"]
+    cpus: 0.5
+    mem_limit: 256m
+
+  laravel:
+    build:
+      context: apps/laravel
+      additional_contexts:
+        slowpoke: ../packages/laravel
+    environment:
+      # Only the slowpoke/laravel package traces this app: with OpenTelemetry too, queries count twice.
+      SLOWPOKE_OTLP_ENDPOINT: http://agent:4318/v1/traces
+      SLOWPOKE_SERVICE: laravel-shop
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_CONNECTION: mysql
+      DB_HOST: mariadb
+      DB_DATABASE: shop
+      DB_USERNAME: root
+      DB_PASSWORD: lab
+      SESSION_DRIVER: array
+      CACHE_STORE: array
+    volumes: ["logs:/logs"]
+    cap_add: [SYS_PTRACE] # php-fpm slowlog reads the stack of slow workers
+    depends_on: [mariadb]
+    restart: unless-stopped
+    cpus: 0.4
+    mem_limit: 256m
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx/laravel.conf:/etc/nginx/conf.d/default.conf:ro
+      - logs:/logs
+    ports: ["8090:80", "8091:81"]
+    depends_on: [laravel]
+    cpus: 0.1
+    mem_limit: 64m
+
+  fastapi:
+    build: apps/fastapi
+    environment:
+      <<: *otel
+      OTEL_SERVICE_NAME: fastapi-shop
+      DATABASE_URL: postgresql+psycopg2://postgres:lab@postgres:5432/shop
+    depends_on: [postgres]
+    restart: unless-stopped
+    cpus: 0.3
+    mem_limit: 256m
+
+  express:
+    build:
+      context: apps/express
+      # The package lives outside this directory: the lab builds it from the checkout.
+      additional_contexts:
+        slowpoke-node: ../packages/node
+    environment:
+      # To the other machine's agent, on purpose.
+      SLOWPOKE_OTLP_ENDPOINT: http://agent2:4318/v1/traces
+      SLOWPOKE_SERVICE: express-shop
+      SLOWPOKE_CODE_ROOT: /app
+      DATABASE_URL: mysql://root:lab@mariadb:3306/shop
+    depends_on: [mariadb]
+    restart: unless-stopped
+    cpus: 0.3
+    mem_limit: 256m
+
+  go:
+    build: apps/go
+    environment:
+      <<: *otel
+      OTEL_SERVICE_NAME: go-shop
+      DATABASE_URL: postgres://postgres:lab@postgres:5432/shop?sslmode=disable
+    depends_on: [postgres]
+    restart: unless-stopped
+    cpus: 0.2
+    mem_limit: 128m
+
+  loadgen:
+    image: alpine:3.20
+    command: ["/traffic.sh"]
+    volumes: ["./loadgen/traffic.sh:/traffic.sh:ro"]
+    depends_on: [nginx, fastapi, express, go]
+    profiles: [traffic]
+    cpus: 0.1
+    mem_limit: 32m
+
+volumes:
+  agent2-state:
+  server-data:
+  agent-state:
+  logs:
+  mysql-logs:

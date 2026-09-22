@@ -1,0 +1,45 @@
+#!/bin/sh
+# What the bundle costs a request, measured instead of claimed.
+#   ./bin/bench          PHP 7.4 and 8.3
+#   ./bin/bench 8.4      one version
+#
+# It times everything the bundle does while a request is running: the Doctrine middleware, the line
+# of application code behind each query, and building the trace. What is left — encoding the
+# payload and handing it to the agent — happens on kernel.terminate, after the response has left
+# (see the README).
+set -eu
+cd "$(dirname "$0")/.."
+
+for php in ${*:-7.4 8.3}; do
+	docker run --rm -v "$(pwd)":/pkg -w /pkg "php:$php-cli" php -r '
+foreach (["OriginFinder", "Sender", "NullSender", "Tracer"] as $class) { require "/pkg/src/$class.php"; }
+
+$tracer = new Slowpoke\Symfony\Tracer(
+    new Slowpoke\Symfony\OriginFinder("/app", 60, ["vendor/", "var/cache/"]),
+    function () { return new Slowpoke\Symfony\NullSender(); },
+    ["service" => "app", "max_queries" => 500, "max_sql_length" => 10000]
+);
+
+// A stack as deep as a controller calling a repository calling the query builder.
+function deep(int $n, callable $f) { return $n > 0 ? deep($n - 1, $f) : $f(); }
+$sql = "SELECT t0.id AS id_1, t0.status AS status_2 FROM orders t0 WHERE t0.customer_id = ? ORDER BY t0.created_at DESC LIMIT 25";
+$runs = 3000;
+$queries = 50;
+
+$best = INF;
+for ($round = 0; $round < 3; $round++) {
+    $t = microtime(true);
+    for ($i = 0; $i < $runs; $i++) {
+        $tracer->startRequest("GET", microtime(true));
+        for ($q = 0; $q < $queries; $q++) {
+            deep(10, function () use ($tracer, $sql) { $tracer->recordQuery($sql, 1.5, "pdo_mysql"); });
+        }
+        $tracer->finishRequest("/orders/{id}", "/orders/7", 200);
+        $tracer->reset();
+    }
+    $best = min($best, (microtime(true) - $t) / $runs * 1000);
+}
+printf("PHP %-7s %.2f ms on a request with %d queries · %.1f microseconds per query\n",
+    PHP_VERSION, $best, $queries, $best * 1000 / $queries);
+'
+done

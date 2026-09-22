@@ -1,0 +1,16 @@
+#!/bin/sh
+# PHPStan level 6 on src/, with the dependencies ./bin/test installed for that PHP version.
+#   ./bin/stan          the minimum supported set: PHP 7.4, Symfony 5.4, DBAL 3
+#   ./bin/stan 8.3      the newest one
+#
+# The minimum is what CI analyses, and what must stay clean: the bundle declares PHP 7.4, and a
+# signature is only safe if it is safe there. On the newest set PHPStan also reports the places
+# where the bundle deliberately narrows a DBAL 4 signature so that PHP 7.4 can parse it, which the
+# comments in src/Doctrine explain and the test matrix covers on both DBAL versions.
+set -eu
+cd "$(dirname "$0")/.."
+php="${1:-7.4}"
+vendor="$(ls -dt vendor/php$php-* 2>/dev/null | head -1)"  # the newest install for that PHP
+[ -n "$vendor" ] || { echo "run ./bin/test $php first: no vendor directory for it" >&2; exit 1; }
+exec docker run --rm --cpus 1 -v "$(pwd)":/pkg -w /pkg ghcr.io/phpstan/phpstan:2 \
+	analyse --no-progress --autoload-file "$vendor/autoload.php"

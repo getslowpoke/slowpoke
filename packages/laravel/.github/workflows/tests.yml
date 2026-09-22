@@ -1,0 +1,41 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1" # weekly: new Laravel and PHP releases can break compatibility without a push
+
+permissions:
+  contents: read
+
+jobs:
+  phpunit:
+    name: PHP ${{ matrix.php }} · Laravel ${{ matrix.laravel }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: "7.4", laravel: "5.8", testbench: "3.8.*" }
+          - { php: "7.4", laravel: "6",   testbench: "4.*" }
+          - { php: "7.4", laravel: "7",   testbench: "5.*" }
+          - { php: "7.4", laravel: "8",   testbench: "6.*" }
+          - { php: "8.0", laravel: "9",   testbench: "7.*" }
+          - { php: "8.1", laravel: "10",  testbench: "8.*" }
+          - { php: "8.2", laravel: "11",  testbench: "9.*" }
+          - { php: "8.3", laravel: "12",  testbench: "10.*" }
+          - { php: "8.4", laravel: "13",  testbench: "11.*" }
+          - { php: "8.5", laravel: "13",  testbench: "11.*" }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+      - name: Install Laravel ${{ matrix.laravel }}
+        env:
+          COMPOSER_NO_SECURITY_BLOCKING: 1 # old Laravel releases carry advisories: allowed for tests only
+        run: composer update --no-interaction --no-progress --with "orchestra/testbench:${{ matrix.testbench }}"
+      - run: vendor/bin/phpunit

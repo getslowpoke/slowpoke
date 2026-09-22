@@ -1,0 +1,13 @@
+server {
+    listen 80;
+    server_name shop.example.test www.shop.example.test;
+    root /var/www/shop/public;
+    access_log /var/log/nginx/shop.access.log timed;
+    location ~ \.php$ { fastcgi_pass 127.0.0.1:9000; }
+}
+server {
+    listen 80;
+    server_name blog.example.test;
+    access_log /var/log/nginx/blog.access.log timed;
+    location / { proxy_pass http://127.0.0.1:8000; }
+}

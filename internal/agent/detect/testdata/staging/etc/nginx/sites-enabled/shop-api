@@ -1,0 +1,38 @@
+server {
+    server_name api-dev.example.test;
+    root /var/www/shop-api/current/public;
+    index index.php;
+
+    # CORS headers
+    set $cors_origin "";
+    if ($http_origin ~* "^https://(app\.example\.test|localhost)(:[0-9]+)?$") {
+        set $cors_origin $http_origin;
+    }
+    add_header Access-Control-Allow-Methods "GET, POST; PUT" always;
+
+    location /app {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_read_timeout 3600s;
+    }
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    location ~ \.php$ {
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        include fastcgi_params;
+    }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/api-dev.example.test/fullchain.pem;
+}
+server {
+    if ($host = api-dev.example.test) {
+        return 301 https://$host$request_uri;
+    }
+    listen 80;
+    server_name api-dev.example.test;
+    return 404;
+}

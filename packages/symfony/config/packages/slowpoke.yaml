@@ -1,0 +1,35 @@
+# Optional: copy to config/packages/slowpoke.yaml to change a setting. Without this file the bundle
+# behaves exactly the same. Values read from the environment fall back to the default shown when the
+# variable is unset or empty.
+slowpoke:
+    # SLOWPOKE_ENABLED, default true. false turns everything off: nothing recorded, nothing sent.
+    # A literal "enabled: false" here does not even register the listeners and the Doctrine middleware.
+    enabled: '%env(default::SLOWPOKE_ENABLED)%'
+    # SLOWPOKE_OTLP_ENDPOINT, default http://127.0.0.1:4318/v1/traces: the Slowpoke agent's OTLP receiver.
+    # Plain http to a local or private host only, anything else is ignored.
+    endpoint: '%env(default::SLOWPOKE_OTLP_ENDPOINT)%'
+    # SLOWPOKE_SERVICE, default "symfony": the name of this application in Slowpoke.
+    service: '%env(default::SLOWPOKE_SERVICE)%'
+    # SLOWPOKE_TIMEOUT, default 0.1: seconds to connect, then to hand over the trace. Past that it is dropped.
+    timeout: '%env(default::SLOWPOKE_TIMEOUT)%'
+    # SLOWPOKE_MAX_QUERIES, default 500: queries described per request or message; the rest are only counted.
+    max_queries: '%env(default::SLOWPOKE_MAX_QUERIES)%'
+    # SLOWPOKE_HTTP_CLIENT, default true: record the outbound calls made with Symfony's HTTP client
+    # (method, remote host, status, duration, the line that made them; never the path, the query
+    # string, headers or bodies). A literal "http_client: false" here does not even decorate the client.
+    http_client: '%env(default::SLOWPOKE_HTTP_CLIENT)%'
+    # SLOWPOKE_MAX_HTTP_CALLS, default 200: outbound calls described per request or message; the rest are counted.
+    max_http_calls: '%env(default::SLOWPOKE_MAX_HTTP_CALLS)%'
+    # Longer statements are cut (huge IN lists, bulk inserts).
+    max_sql_length: 10000
+    # Stack frames inspected to find the application line that ran a query.
+    backtrace_limit: 60
+    # Trace each message handled by a Messenger worker.
+    messenger: true
+    # Trace each console command, which on a server means cron. Workers (messenger:consume and the
+    # like) are never traced as a command: one trace open for hours would swallow every message.
+    commands: true
+    # Command names to leave alone as well, on top of the workers the bundle already knows.
+    skip_commands: []
+    # Code paths are sent relative to this directory.
+    code_root: '%kernel.project_dir%'

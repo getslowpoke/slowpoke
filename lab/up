@@ -1,0 +1,19 @@
+#!/bin/sh
+# Builds the binaries, starts the lab, creates the user and the project on first run.
+set -e
+cd "$(dirname "$0")"
+../scripts/go build -o bin/slowpoke-server ./cmd/slowpoke-server
+../scripts/go build -o bin/slowpoke-agent ./cmd/slowpoke-agent
+
+[ -f .env ] || echo "SLOWPOKE_TOKEN=" > .env
+docker compose up -d server
+if ! grep -q 'SLOWPOKE_TOKEN=.' .env; then
+  docker compose exec -T server /app/slowpoke-server create-user -name Lab -email lab@slowpoke.local -password slowpoke-lab-2026
+  token=$(docker compose exec -T server /app/slowpoke-server create-project -name "Lab" -timezone Europe/Rome | tail -1)
+  echo "SLOWPOKE_TOKEN=$token" > .env
+fi
+
+# One image at a time: Docker has 2 CPUs.
+for app in laravel fastapi express go; do docker compose build "$app"; done
+docker compose --profile traffic up -d
+echo "Slowpoke: http://localhost:8089  (lab@slowpoke.local / slowpoke-lab-2026)"

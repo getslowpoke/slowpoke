@@ -1,0 +1,13 @@
+# A second machine, with the express application on it and no web server: the access log of the
+# nginx in front lives on the other one. Only the host each side declares can tell the server
+# that those are the same requests.
+server: http://server:8080
+token: ${SLOWPOKE_TOKEN}
+host: lab-vps-2
+interval: 10s
+state_dir: /state
+
+sources:
+  - type: otlp
+    listen: 0.0.0.0:4318
+    code_root: /app/

@@ -1,0 +1,33 @@
+# Slowpoke server with PostgreSQL: docker compose up -d, then open http://localhost:8080
+# and create the first user. Set POSTGRES_PASSWORD in a .env file next to this one.
+services:
+  server:
+    image: ghcr.io/getslowpoke/server:latest
+    build:
+      context: .
+      target: server
+    environment:
+      SLOWPOKE_DATABASE_URL: postgres://slowpoke:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/slowpoke?sslmode=disable
+      # The address agents and browsers use, e.g. https://slowpoke.example.com
+      SLOWPOKE_PUBLIC_URL: ${SLOWPOKE_PUBLIC_URL:-}
+    ports: ["${SLOWPOKE_PORT:-8080}:8080"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: slowpoke
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: slowpoke
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "slowpoke"]
+      interval: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

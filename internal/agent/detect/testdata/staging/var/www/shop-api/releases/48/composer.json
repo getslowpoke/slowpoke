@@ -1,0 +1,1 @@
+{"name": "acme/shop-api", "require": {"php": "^8.2", "laravel/framework": "^12.0", "laravel/reverb": "^1.0"}}

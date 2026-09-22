@@ -1,0 +1,10 @@
+[
+  {"name": "strings and numbers", "sql": "select * from users where email = 'ada@example.com' and id = 42", "redacted": "select * from users where email = 's' and id = 0"},
+  {"name": "like keeps the wildcard shape", "sql": "select * from products where name like '%lamp%' or sku like 'AB%'", "redacted": "select * from products where name like '%s%' or sku like 's%'"},
+  {"name": "limit and offset keep their values", "sql": "select id from orders where total > 99.90 limit 20 offset 50000", "redacted": "select id from orders where total > 0 limit 20 offset 50000"},
+  {"name": "mysql limit with comma", "sql": "select id from orders limit 10000, 20", "redacted": "select id from orders limit 10000, 20"},
+  {"name": "escaped quotes", "sql": "update notes set body = 'it\\'s a ''secret''' where id = 7", "redacted": "update notes set body = 's' where id = 0"},
+  {"name": "identifiers with digits untouched", "sql": "select t1.col2 from table3 t1 where t1.x = 5", "redacted": "select t1.col2 from table3 t1 where t1.x = 0"},
+  {"name": "in list", "sql": "select * from logs where entity_id in (4848337, 4848338)", "redacted": "select * from logs where entity_id in (0, 0)"},
+  {"name": "postgres placeholders are not values", "sql": "select id from products where description ilike $1 and price > 10 limit $2", "redacted": "select id from products where description ilike $1 and price > 0 limit $2"}
+]

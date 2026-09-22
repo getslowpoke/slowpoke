@@ -1,0 +1,9 @@
+# Installed copies only need src/, config/ and the docs. .github stays: OpenSSF Scorecard reads the
+# repository archive, and without it no workflow, CodeQL or Dependabot would be seen.
+/tests          export-ignore
+/docker         export-ignore
+/bin            export-ignore
+/phpunit.xml    export-ignore
+/.gitignore     export-ignore
+/.gitattributes export-ignore
+/phpstan.neon.dist export-ignore

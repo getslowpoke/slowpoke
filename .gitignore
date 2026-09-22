@@ -1,0 +1,12 @@
+/bin/
+/dist/
+node_modules/
+/web/dist/
+*.db
+*.db-journal
+.env
+internal/server/web/dist/*
+!internal/server/web/dist/.gitkeep
+
+# detect fixtures read Laravel .env files (fake values)
+!internal/agent/detect/testdata/**/.env

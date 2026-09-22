@@ -1,0 +1,1577 @@
+[
+    {
+        "name": "Django: N+1 with %s placeholders",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "GET /orders/",
+                                    "kind": 2,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000042001000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "GET"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.route",
+                                            "value": {
+                                                "stringValue": "/orders/"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "200"
+                                            }
+                                        },
+                                        {
+                                            "key": "server.address",
+                                            "value": {
+                                                "stringValue": "shop.example.com"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000007500000",
+                                    "endTimeUnixNano": "1760000000020000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "sqlite"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT \"shop_order\".\"id\", \"shop_order\".\"customer_id\" FROM \"shop_order\" ORDER BY \"shop_order\".\"id\" ASC"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/views.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "9"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb4",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000021200000",
+                                    "endTimeUnixNano": "1760000000022000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "sqlite"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT \"shop_customer\".\"id\", \"shop_customer\".\"name\" FROM \"shop_customer\" WHERE \"shop_customer\".\"id\" = %s LIMIT 21"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/views.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "10"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb5",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000023200000",
+                                    "endTimeUnixNano": "1760000000024000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "sqlite"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT \"shop_customer\".\"id\", \"shop_customer\".\"name\" FROM \"shop_customer\" WHERE \"shop_customer\".\"id\" = %s LIMIT 21"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/views.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "10"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb6",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000025200000",
+                                    "endTimeUnixNano": "1760000000026000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "sqlite"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT \"shop_customer\".\"id\", \"shop_customer\".\"name\" FROM \"shop_customer\" WHERE \"shop_customer\".\"id\" = %s LIMIT 21"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/views.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "10"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb7",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000027201000",
+                                    "endTimeUnixNano": "1760000000028000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "sqlite"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT \"shop_customer\".\"id\", \"shop_customer\".\"name\" FROM \"shop_customer\" WHERE \"shop_customer\".\"id\" = %s LIMIT 21"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/views.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "10"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb8",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000029201000",
+                                    "endTimeUnixNano": "1760000000030001000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "sqlite"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT \"shop_customer\".\"id\", \"shop_customer\".\"name\" FROM \"shop_customer\" WHERE \"shop_customer\".\"id\" = %s LIMIT 21"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/views.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "10"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb9",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000031201000",
+                                    "endTimeUnixNano": "1760000000032001000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "sqlite"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT \"shop_customer\".\"id\", \"shop_customer\".\"name\" FROM \"shop_customer\" WHERE \"shop_customer\".\"id\" = %s LIMIT 21"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/views.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "10"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "GET /orders/",
+            "status": 200,
+            "requests": 1,
+            "source": "otlp:shop",
+            "site": "shop.example.com",
+            "queries": [
+                {
+                    "statement": "SELECT \"shop_order\".\"id\", \"shop_order\".\"customer_id\" FROM \"shop_order\" ORDER BY \"shop_order\".\"id\" ASC",
+                    "n": 1,
+                    "origin": "shop/views.py:9",
+                    "fingerprint": "select shop_order.id, shop_order.customer_id from shop_order order by shop_order.id asc",
+                    "n_plus_one": false
+                },
+                {
+                    "statement": "SELECT \"shop_customer\".\"id\", \"shop_customer\".\"name\" FROM \"shop_customer\" WHERE \"shop_customer\".\"id\" = %s LIMIT 21",
+                    "n": 6,
+                    "origin": "shop/views.py:10",
+                    "fingerprint": "select shop_customer.id, shop_customer.name from shop_customer where shop_customer.id = ? limit ?",
+                    "n_plus_one": true
+                }
+            ]
+        }
+    },
+    {
+        "name": "Django: included route with a converter, 404 raised by the view",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "GET /api/orders/<int:pk>/",
+                                    "kind": 2,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000002000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "GET"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.route",
+                                            "value": {
+                                                "stringValue": "/api/orders/<int:pk>/"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "404"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000000900000",
+                                    "endTimeUnixNano": "1760000000002000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "postgresql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT \"shop_order\".\"total\" FROM \"shop_order\" WHERE \"shop_order\".\"id\" = %s LIMIT 1"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/views.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "15"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "GET /api/orders/{pk}/",
+            "status": 404,
+            "requests": 1,
+            "source": "otlp:shop",
+            "queries": [
+                {
+                    "statement": "SELECT \"shop_order\".\"total\" FROM \"shop_order\" WHERE \"shop_order\".\"id\" = %s LIMIT 1",
+                    "n": 1,
+                    "origin": "shop/views.py:15",
+                    "fingerprint": "select shop_order.total from shop_order where shop_order.id = ? limit ?",
+                    "n_plus_one": false
+                }
+            ]
+        }
+    },
+    {
+        "name": "Django: re_path route turned into a template",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "GET /legacy/{slug}/",
+                                    "kind": 2,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000000000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "GET"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.route",
+                                            "value": {
+                                                "stringValue": "/legacy/{slug}/"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "200"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "GET /legacy/{slug}/",
+            "status": 200,
+            "requests": 1,
+            "source": "otlp:shop",
+            "queries": []
+        }
+    },
+    {
+        "name": "Flask + SQLAlchemy over psycopg2: %(name)s placeholders, server error",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "PUT /api/orders/<int:order_id>",
+                                    "kind": 2,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000020000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "PUT"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.route",
+                                            "value": {
+                                                "stringValue": "/api/orders/<int:order_id>"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "500"
+                                            }
+                                        }
+                                    ],
+                                    "status": {
+                                        "code": 2
+                                    }
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "UPDATE",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000016500000",
+                                    "endTimeUnixNano": "1760000000020000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "postgresql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "UPDATE orders SET status=%(status)s WHERE orders.id = %(id_1)s"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/orders.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "40"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "PUT /api/orders/{order_id}",
+            "status": 500,
+            "requests": 1,
+            "source": "otlp:shop",
+            "queries": [
+                {
+                    "statement": "UPDATE orders SET status=%(status)s WHERE orders.id = %(id_1)s",
+                    "n": 1,
+                    "origin": "shop/orders.py:40",
+                    "fingerprint": "update orders set status = ? where orders.id = ?",
+                    "n_plus_one": false
+                }
+            ]
+        }
+    },
+    {
+        "name": "FastAPI + async SQLAlchemy over aiosqlite: qmark placeholders",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "GET /orders/{order_id}",
+                                    "kind": 2,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000002000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "GET"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.route",
+                                            "value": {
+                                                "stringValue": "/orders/{order_id}"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "200"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000001600000",
+                                    "endTimeUnixNano": "1760000000002000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "sqlite"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT orders.id, orders.total \nFROM orders \nWHERE orders.id = ?"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "app/api.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "22"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "GET /orders/{order_id}",
+            "status": 200,
+            "requests": 1,
+            "source": "otlp:shop",
+            "queries": [
+                {
+                    "statement": "SELECT orders.id, orders.total \nFROM orders \nWHERE orders.id = ?",
+                    "n": 1,
+                    "origin": "app/api.py:22",
+                    "fingerprint": "select orders.id, orders.total from orders where orders.id = ?",
+                    "n_plus_one": false
+                }
+            ]
+        }
+    },
+    {
+        "name": "no matching route: the path stands in for the route",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "GET",
+                                    "kind": 2,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000000000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "GET"
+                                            }
+                                        },
+                                        {
+                                            "key": "url.path",
+                                            "value": {
+                                                "stringValue": "/.env"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "404"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "GET /.env",
+            "status": 404,
+            "requests": 1,
+            "source": "otlp:shop",
+            "queries": []
+        }
+    },
+    {
+        "name": "job: one statement written with three driver placeholder styles is one query",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "import_orders",
+                                    "kind": 5,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000108000000",
+                                    "attributes": [
+                                        {
+                                            "key": "slowpoke.kind",
+                                            "value": {
+                                                "stringValue": "job"
+                                            }
+                                        },
+                                        {
+                                            "key": "messaging.destination.name",
+                                            "value": {
+                                                "stringValue": "nightly"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000001000000",
+                                    "endTimeUnixNano": "1760000000002000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT name FROM customers WHERE id = %s"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/jobs.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "31"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb4",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000003000000",
+                                    "endTimeUnixNano": "1760000000004000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "sqlite"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT name FROM customers WHERE id = ?"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/jobs.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "35"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb5",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000005000000",
+                                    "endTimeUnixNano": "1760000000006000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "postgresql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT name FROM customers WHERE id = %(id)s"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/jobs.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "38"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb6",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "DELETE",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000006000000",
+                                    "endTimeUnixNano": "1760000000008000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "DELETE FROM django_session WHERE expire_date < %s"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "job import_orders",
+            "status": 0,
+            "requests": 1,
+            "source": "",
+            "job": {
+                "kind": "job",
+                "name": "import_orders",
+                "runs": 1,
+                "failed": 0
+            },
+            "queries": [
+                {
+                    "statement": "SELECT name FROM customers WHERE id = %s",
+                    "n": 3,
+                    "origin": "shop/jobs.py:31",
+                    "fingerprint": "select name from customers where id = ?",
+                    "n_plus_one": false
+                },
+                {
+                    "statement": "DELETE FROM django_session WHERE expire_date < %s",
+                    "n": 1,
+                    "origin": "",
+                    "fingerprint": "delete from django_session where expire_date < ?",
+                    "n_plus_one": false
+                }
+            ]
+        }
+    },
+    {
+        "name": "Celery starmap: named after the task it runs, not the celery.starmap built-in",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "shop.tasks.resize (starmap)",
+                                    "kind": 5,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000052000000",
+                                    "attributes": [
+                                        {
+                                            "key": "slowpoke.kind",
+                                            "value": {
+                                                "stringValue": "job"
+                                            }
+                                        },
+                                        {
+                                            "key": "messaging.destination.name",
+                                            "value": {
+                                                "stringValue": "images"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "UPDATE",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000002000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "postgresql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "UPDATE images SET width = %s WHERE path = %s"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/tasks.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "44"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "job shop.tasks.resize (starmap)",
+            "status": 0,
+            "requests": 1,
+            "source": "",
+            "job": {
+                "kind": "job",
+                "name": "shop.tasks.resize (starmap)",
+                "runs": 1,
+                "failed": 0
+            },
+            "queries": [
+                {
+                    "statement": "UPDATE images SET width = %s WHERE path = %s",
+                    "n": 1,
+                    "origin": "shop/tasks.py:44",
+                    "fingerprint": "update images set width = ? where path = ?",
+                    "n_plus_one": false
+                }
+            ]
+        }
+    },
+    {
+        "name": "management command run by cron, and it failed",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "close_orders",
+                                    "kind": 5,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000052000000",
+                                    "attributes": [
+                                        {
+                                            "key": "slowpoke.kind",
+                                            "value": {
+                                                "stringValue": "command"
+                                            }
+                                        }
+                                    ],
+                                    "status": {
+                                        "code": 2
+                                    }
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "UPDATE",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000002000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "postgresql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "UPDATE orders SET closed_at = %s WHERE closed_at IS NULL"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/management/commands/close_orders.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "52"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "command close_orders",
+            "status": 0,
+            "requests": 1,
+            "source": "",
+            "job": {
+                "kind": "command",
+                "name": "close_orders",
+                "runs": 1,
+                "failed": 1
+            },
+            "queries": [
+                {
+                    "statement": "UPDATE orders SET closed_at = %s WHERE closed_at IS NULL",
+                    "n": 1,
+                    "origin": "shop/management/commands/close_orders.py:52",
+                    "fingerprint": "update orders set closed_at = ? where closed_at is null",
+                    "n_plus_one": false
+                }
+            ]
+        }
+    },
+    {
+        "name": "request with outbound calls: one to Stripe, one failed to a partner",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "python"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "POST /checkout/",
+                                    "kind": 2,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000001931000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "POST"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.route",
+                                            "value": {
+                                                "stringValue": "/checkout/"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "200"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "POST api.stripe.com",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000006000000",
+                                    "endTimeUnixNano": "1760000000426000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "POST"
+                                            }
+                                        },
+                                        {
+                                            "key": "server.address",
+                                            "value": {
+                                                "stringValue": "api.stripe.com"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "200"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/services/stripe.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "88"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb4",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "GET partner.example.com",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000428000000",
+                                    "endTimeUnixNano": "1760000001928000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "GET"
+                                            }
+                                        },
+                                        {
+                                            "key": "server.address",
+                                            "value": {
+                                                "stringValue": "partner.example.com"
+                                            }
+                                        },
+                                        {
+                                            "key": "server.port",
+                                            "value": {
+                                                "intValue": "8080"
+                                            }
+                                        }
+                                    ],
+                                    "status": {
+                                        "code": 2
+                                    }
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb5",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000003000000",
+                                    "endTimeUnixNano": "1760000000005000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "postgresql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT id, total FROM cart WHERE id = %s"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "shop/views.py"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "27"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "POST /checkout/",
+            "status": 200,
+            "requests": 1,
+            "source": "otlp:shop",
+            "queries": [
+                {
+                    "statement": "SELECT id, total FROM cart WHERE id = %s",
+                    "n": 1,
+                    "origin": "shop/views.py:27",
+                    "fingerprint": "select id, total from cart where id = ?",
+                    "n_plus_one": false
+                }
+            ],
+            "outbound": [
+                {
+                    "host": "api.stripe.com",
+                    "n": 1,
+                    "errors": 0,
+                    "origin": "shop/services/stripe.py:88"
+                },
+                {
+                    "host": "partner.example.com:8080",
+                    "n": 1,
+                    "errors": 1,
+                    "origin": ""
+                }
+            ]
+        }
+    }
+]

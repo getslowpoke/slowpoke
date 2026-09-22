@@ -1,0 +1,38 @@
+#!/bin/sh
+# Runs the PHPUnit suite in Docker, nothing installed on the host.
+#   ./bin/test 7.4                      Symfony 5.4 LTS, Doctrine DBAL 3
+#   ./bin/test 8.2                      Symfony 6.4 LTS, Doctrine DBAL 4
+#   ./bin/test 8.3                      Symfony 7.x, Doctrine DBAL 4
+#   ./bin/test 8.2 'doctrine/dbal:^3.9 symfony/framework-bundle:6.4.*'   constraints instead of the defaults
+# Extra arguments after the constraints go to PHPUnit (e.g. --filter Origin).
+set -eu
+cd "$(dirname "$0")/.."
+php="${1:-8.3}"; shift || true
+with=""
+if [ $# -gt 0 ] && [ "${1#-}" = "$1" ]; then with="$1"; shift; fi
+if [ -z "$with" ]; then
+  case "$php" in
+    7.4) symfony="5.4.*" ;;
+    8.2) symfony="6.4.*" ;;
+    *) symfony="^7.0" ;;
+  esac
+  # Every component of the same release, or Composer mixes in newer ones (Messenger 7 with HttpKernel 6.4).
+  for c in framework-bundle http-kernel http-foundation dependency-injection config event-dispatcher routing console messenger twig-bundle yaml error-handler http-client; do
+    with="$with symfony/$c:$symfony"
+  done
+fi
+tag="slowpoke-symfony-test:$php"
+docker image inspect "$tag" >/dev/null 2>&1 || docker build -q --build-arg PHP="$php" -t "$tag" docker >/dev/null
+# One vendor dir per PHP/constraints combination, so runs do not reinstall each other's dependencies.
+# It stays under vendor/: the origin finder must see framework frames as third-party code.
+vendor="vendor/php$php-$(echo "$with" | cksum | cut -d' ' -f1)"
+update="composer update --quiet --no-progress"
+for w in $with; do update="$update --with '$w'"; done
+# Inside the Slowpoke repository the shared fixtures in spec/ are mounted too; the standalone
+# package repository runs the same tests without them (the fixture test is then skipped).
+spec=""
+[ -d ../../spec ] && spec="-v $(cd ../../spec && pwd):/repo/spec"
+exec docker run --rm --cpus 1 \
+  -v "$(pwd)":/repo/packages/symfony $spec -v slowpoke-composer-cache:/tmp/cache \
+  -e COMPOSER_CACHE_DIR=/tmp/cache -e COMPOSER_NO_SECURITY_BLOCKING=1 -e COMPOSER_VENDOR_DIR="$vendor" -e UPDATE_FIXTURES="${UPDATE_FIXTURES:-}" \
+  -w /repo/packages/symfony "$tag" sh -c "$update && echo \"$with\" > $vendor/.constraints && php $vendor/bin/phpunit $*"

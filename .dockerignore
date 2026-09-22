@@ -1,0 +1,14 @@
+.git
+bin
+lab
+e2e
+packages
+spec
+skills
+integrations
+docs
+web/node_modules
+internal/server/web/dist
+**/*_test.go
+*.db
+.env

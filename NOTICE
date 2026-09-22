@@ -1,0 +1,22 @@
+Slowpoke
+Copyright (C) 2026 Christian Cannata
+
+This project is licensed in two halves.
+
+MIT (see LICENSE-MIT), because these run on other people's machines and inside their
+applications:
+
+    cmd/slowpoke-agent/          the agent binary
+    internal/agent/              everything the agent does, including detect/
+    internal/protocol/           the wire between agents and servers
+    internal/fingerprint/        SQL normalisation and redaction
+    internal/sqlsafe/            what may be EXPLAINed
+    packages/                    the framework packages (also published separately)
+    spec/                        the fixtures shared across languages
+
+GNU Affero General Public License v3.0 or later (see LICENSE): everything else — the server,
+the panel, the game, the debt, the documentation. Using it inside your company, modified or
+not, asks nothing of you; offering it to others as a hosted service asks you to publish your
+changes.
+
+The two halves share no code, and cmd/slowpoke-agent/license_test.go fails if they ever do.

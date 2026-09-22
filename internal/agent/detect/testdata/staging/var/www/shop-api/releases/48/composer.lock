@@ -1,0 +1,4 @@
+{"packages": [
+  {"name": "laravel/framework", "version": "v12.67.0"},
+  {"name": "laravel/reverb", "version": "v1.4.0"}
+]}

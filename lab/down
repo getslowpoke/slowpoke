@@ -1,0 +1,3 @@
+#!/bin/sh
+# Stops the lab. Data stays in the volumes; ./down -v deletes it too.
+cd "$(dirname "$0")" && docker compose --profile traffic down "$@"

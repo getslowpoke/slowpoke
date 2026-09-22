@@ -1,0 +1,1167 @@
+[
+    {
+        "name": "request with an N+1 in a Twig template",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-symfony"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "php"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke/symfony",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "GET /orders",
+                                    "kind": 2,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000067001000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "GET"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.route",
+                                            "value": {
+                                                "stringValue": "/orders"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "200"
+                                            }
+                                        },
+                                        {
+                                            "key": "server.address",
+                                            "value": {
+                                                "stringValue": "shop.example.com:8443"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000003800000",
+                                    "endTimeUnixNano": "1760000000045000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT id, customer_id FROM orders WHERE status = ? ORDER BY created_at DESC LIMIT 25"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "src/Controller/OrderController.php"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "18"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb4",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000046100000",
+                                    "endTimeUnixNano": "1760000000047000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT t0.id AS id_1, t0.name AS name_2 FROM customer t0 WHERE t0.id = ?"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "templates/orders/index.html.twig"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "7"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb5",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000048100000",
+                                    "endTimeUnixNano": "1760000000049000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT t0.id AS id_1, t0.name AS name_2 FROM customer t0 WHERE t0.id = ?"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "templates/orders/index.html.twig"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "7"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb6",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000050100000",
+                                    "endTimeUnixNano": "1760000000051000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT t0.id AS id_1, t0.name AS name_2 FROM customer t0 WHERE t0.id = ?"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "templates/orders/index.html.twig"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "7"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb7",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000052101000",
+                                    "endTimeUnixNano": "1760000000053001000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT t0.id AS id_1, t0.name AS name_2 FROM customer t0 WHERE t0.id = ?"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "templates/orders/index.html.twig"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "7"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb8",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000054101000",
+                                    "endTimeUnixNano": "1760000000055001000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT t0.id AS id_1, t0.name AS name_2 FROM customer t0 WHERE t0.id = ?"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "templates/orders/index.html.twig"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "7"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb9",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000056101000",
+                                    "endTimeUnixNano": "1760000000057001000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT t0.id AS id_1, t0.name AS name_2 FROM customer t0 WHERE t0.id = ?"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "templates/orders/index.html.twig"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "7"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "GET /orders",
+            "status": 200,
+            "requests": 1,
+            "source": "otlp:shop",
+            "site": "shop.example.com",
+            "queries": [
+                {
+                    "statement": "SELECT id, customer_id FROM orders WHERE status = ? ORDER BY created_at DESC LIMIT 25",
+                    "n": 1,
+                    "origin": "src/Controller/OrderController.php:18",
+                    "n_plus_one": false
+                },
+                {
+                    "statement": "SELECT t0.id AS id_1, t0.name AS name_2 FROM customer t0 WHERE t0.id = ?",
+                    "n": 6,
+                    "origin": "templates/orders/index.html.twig:7",
+                    "n_plus_one": true
+                }
+            ]
+        }
+    },
+    {
+        "name": "route template with a parameter, server error, Postgres",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-symfony"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "php"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke/symfony",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "PUT /api/orders/{id}",
+                                    "kind": 2,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000021000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "PUT"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.route",
+                                            "value": {
+                                                "stringValue": "/api/orders/{id}"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "500"
+                                            }
+                                        }
+                                    ],
+                                    "status": {
+                                        "code": 2
+                                    }
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "UPDATE",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000016500000",
+                                    "endTimeUnixNano": "1760000000020000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "postgresql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "UPDATE orders SET status = ?, updated_at = ? WHERE id = ?"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "src/Controller/Api/OrderController.php"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "40"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "PUT /api/orders/{id}",
+            "status": 500,
+            "requests": 1,
+            "source": "otlp:shop",
+            "queries": [
+                {
+                    "statement": "UPDATE orders SET status = ?, updated_at = ? WHERE id = ?",
+                    "n": 1,
+                    "origin": "src/Controller/Api/OrderController.php:40",
+                    "n_plus_one": false
+                }
+            ]
+        }
+    },
+    {
+        "name": "no matching route: the path stands in for the route",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-symfony"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "php"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke/symfony",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "GET",
+                                    "kind": 2,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000001000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "GET"
+                                            }
+                                        },
+                                        {
+                                            "key": "url.path",
+                                            "value": {
+                                                "stringValue": "/.env"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "404"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "GET /.env",
+            "status": 404,
+            "requests": 1,
+            "source": "otlp:shop",
+            "queries": []
+        }
+    },
+    {
+        "name": "Messenger message: queries without an HTTP request",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-symfony"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "php"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke/symfony",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "App\\Message\\SendInvoices",
+                                    "kind": 5,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000000410000000",
+                                    "attributes": [
+                                        {
+                                            "key": "slowpoke.kind",
+                                            "value": {
+                                                "stringValue": "job"
+                                            }
+                                        },
+                                        {
+                                            "key": "messaging.destination.name",
+                                            "value": {
+                                                "stringValue": "async"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000050000000",
+                                    "endTimeUnixNano": "1760000000300000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT * FROM invoices WHERE sent_at IS NULL"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "src/MessageHandler/SendInvoicesHandler.php"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "31"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb4",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "DELETE",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000309000000",
+                                    "endTimeUnixNano": "1760000000310000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "DELETE FROM messenger_messages WHERE id = ?"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "job App\\Message\\SendInvoices",
+            "status": 0,
+            "requests": 1,
+            "source": "",
+            "job": {
+                "kind": "job",
+                "name": "App\\Message\\SendInvoices",
+                "runs": 1,
+                "failed": 0
+            },
+            "queries": [
+                {
+                    "statement": "SELECT * FROM invoices WHERE sent_at IS NULL",
+                    "n": 1,
+                    "origin": "src/MessageHandler/SendInvoicesHandler.php:31",
+                    "n_plus_one": false
+                },
+                {
+                    "statement": "DELETE FROM messenger_messages WHERE id = ?",
+                    "n": 1,
+                    "origin": "",
+                    "n_plus_one": false
+                }
+            ]
+        }
+    },
+    {
+        "name": "queued console command: named after the command, not the RunCommandMessage wrapper",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-symfony"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "php"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke/symfony",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "app:google-sheet:update",
+                                    "kind": 5,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000001500000000",
+                                    "attributes": [
+                                        {
+                                            "key": "slowpoke.kind",
+                                            "value": {
+                                                "stringValue": "job"
+                                            }
+                                        },
+                                        {
+                                            "key": "messaging.destination.name",
+                                            "value": {
+                                                "stringValue": "async"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000300000000",
+                                    "endTimeUnixNano": "1760000001200000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT * FROM orders WHERE created_at >= ?"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "src/Command/UpdateGoogleSheetCommand.php"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "52"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "job app:google-sheet:update",
+            "status": 0,
+            "requests": 1,
+            "source": "",
+            "job": {
+                "kind": "job",
+                "name": "app:google-sheet:update",
+                "runs": 1,
+                "failed": 0
+            },
+            "queries": [
+                {
+                    "statement": "SELECT * FROM orders WHERE created_at >= ?",
+                    "n": 1,
+                    "origin": "src/Command/UpdateGoogleSheetCommand.php:52",
+                    "n_plus_one": false
+                }
+            ]
+        }
+    },
+    {
+        "name": "console command run by cron, and it failed",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-symfony"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "php"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke/symfony",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "app:invoices:close",
+                                    "kind": 5,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000001250000000",
+                                    "attributes": [
+                                        {
+                                            "key": "slowpoke.kind",
+                                            "value": {
+                                                "stringValue": "command"
+                                            }
+                                        }
+                                    ],
+                                    "status": {
+                                        "code": 2
+                                    }
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "UPDATE",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000020000000",
+                                    "endTimeUnixNano": "1760000001200000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "UPDATE invoices SET closed_at = ? WHERE closed_at IS NULL AND due_at < ?"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "src/Command/CloseInvoicesCommand.php"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "52"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "command app:invoices:close",
+            "status": 0,
+            "requests": 1,
+            "source": "",
+            "job": {
+                "kind": "command",
+                "name": "app:invoices:close",
+                "runs": 1,
+                "failed": 1
+            },
+            "queries": [
+                {
+                    "statement": "UPDATE invoices SET closed_at = ? WHERE closed_at IS NULL AND due_at < ?",
+                    "n": 1,
+                    "origin": "src/Command/CloseInvoicesCommand.php:52",
+                    "n_plus_one": false
+                }
+            ]
+        }
+    },
+    {
+        "name": "request with outbound calls: one to Stripe, one failed to a partner",
+        "payload": {
+            "resourceSpans": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {
+                                "key": "service.name",
+                                "value": {
+                                    "stringValue": "shop"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.name",
+                                "value": {
+                                    "stringValue": "slowpoke-symfony"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.language",
+                                "value": {
+                                    "stringValue": "php"
+                                }
+                            },
+                            {
+                                "key": "telemetry.sdk.version",
+                                "value": {
+                                    "stringValue": "fixture"
+                                }
+                            }
+                        ]
+                    },
+                    "scopeSpans": [
+                        {
+                            "scope": {
+                                "name": "slowpoke/symfony",
+                                "version": "fixture"
+                            },
+                            "spans": [
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "POST /checkout",
+                                    "kind": 2,
+                                    "startTimeUnixNano": "1760000000000000000",
+                                    "endTimeUnixNano": "1760000001931000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "POST"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.route",
+                                            "value": {
+                                                "stringValue": "/checkout"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "200"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb3",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "POST api.stripe.com",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000006000000",
+                                    "endTimeUnixNano": "1760000000426000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "POST"
+                                            }
+                                        },
+                                        {
+                                            "key": "server.address",
+                                            "value": {
+                                                "stringValue": "api.stripe.com"
+                                            }
+                                        },
+                                        {
+                                            "key": "http.response.status_code",
+                                            "value": {
+                                                "intValue": "200"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "src/Service/Stripe.php"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "88"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb4",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "GET partner.example.com",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000428000000",
+                                    "endTimeUnixNano": "1760000001928000000",
+                                    "attributes": [
+                                        {
+                                            "key": "http.request.method",
+                                            "value": {
+                                                "stringValue": "GET"
+                                            }
+                                        },
+                                        {
+                                            "key": "server.address",
+                                            "value": {
+                                                "stringValue": "partner.example.com"
+                                            }
+                                        },
+                                        {
+                                            "key": "server.port",
+                                            "value": {
+                                                "intValue": "8080"
+                                            }
+                                        }
+                                    ],
+                                    "status": {
+                                        "code": 2
+                                    }
+                                },
+                                {
+                                    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                                    "spanId": "bbbbbbbbbbbbbbb5",
+                                    "parentSpanId": "bbbbbbbbbbbbbbb2",
+                                    "name": "SELECT",
+                                    "kind": 3,
+                                    "startTimeUnixNano": "1760000000003000000",
+                                    "endTimeUnixNano": "1760000000005000000",
+                                    "attributes": [
+                                        {
+                                            "key": "db.system.name",
+                                            "value": {
+                                                "stringValue": "mysql"
+                                            }
+                                        },
+                                        {
+                                            "key": "db.query.text",
+                                            "value": {
+                                                "stringValue": "SELECT id, total FROM cart WHERE id = ?"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.file.path",
+                                            "value": {
+                                                "stringValue": "src/Controller/CheckoutController.php"
+                                            }
+                                        },
+                                        {
+                                            "key": "code.line.number",
+                                            "value": {
+                                                "intValue": "27"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expect": {
+            "route": "POST /checkout",
+            "status": 200,
+            "requests": 1,
+            "source": "otlp:shop",
+            "queries": [
+                {
+                    "statement": "SELECT id, total FROM cart WHERE id = ?",
+                    "n": 1,
+                    "origin": "src/Controller/CheckoutController.php:27",
+                    "n_plus_one": false
+                }
+            ],
+            "outbound": [
+                {
+                    "host": "api.stripe.com",
+                    "n": 1,
+                    "errors": 0,
+                    "origin": "src/Service/Stripe.php:88"
+                },
+                {
+                    "host": "partner.example.com:8080",
+                    "n": 1,
+                    "errors": 1,
+                    "origin": ""
+                }
+            ]
+        }
+    }
+]

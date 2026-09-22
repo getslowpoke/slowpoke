@@ -1,0 +1,31 @@
+# One agent playing the role of a VPS that runs four services.
+server: http://server:8080
+token: ${SLOWPOKE_TOKEN}
+host: lab-vps-1
+interval: 10s
+state_dir: /state
+
+sources:
+  - type: host
+  - type: otlp
+    listen: 0.0.0.0:4318
+    code_root: /var/www/app/
+  - type: nginx
+    path: /logs/nginx/access.log
+  # The site in front of the express application, which reports from the other machine: the
+  # name of this source is not a host, so the host is written here.
+  - type: nginx
+    name: express-site
+    site: express.lab
+    path: /logs/nginx/express.log
+  - type: php-fpm
+    path: /logs/php/slow.log
+  - type: mysql-slowlog
+    path: /mysql-logs/slow.log
+  - type: mysql
+    name: mariadb
+    dsn: root:lab@tcp(mariadb:3306)/shop
+    slow_query_seconds: 0.1
+  - type: postgres
+    dsn: postgres://postgres:lab@postgres:5432/shop?sslmode=disable
+    slow_query_seconds: 0.1

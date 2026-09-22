@@ -1,0 +1,75 @@
+#!/bin/sh
+# Ships this checkout to a server you reach over ssh: UI, server binary and the agent binaries
+# the server hands out at /agent/<platform>. It never touches the machines being measured.
+#
+#   ./scripts/deploy your-server            build everything and deploy
+#   ./scripts/deploy your-server --no-build use the binaries already in bin/
+#
+# What it does on the server, in this order: stops the service, copies the database and the
+# previous binary into /root/slowpoke-backup-<timestamp>, installs the new ones, starts, and
+# checks that it answers. If anything fails the previous binary is one command away:
+#
+#   ssh <host> 'install -m 755 /root/slowpoke-backup-<stamp>/slowpoke-server.previous \
+#     /usr/local/bin/slowpoke-server && systemctl restart slowpoke-server'
+set -eu
+
+HOST="${1:-}"
+[ -n "$HOST" ] || { echo "usage: ./scripts/deploy <ssh-host> [--no-build]" >&2; exit 2; }
+cd "$(dirname "$0")/.."
+VERSION="0.1.0-$(git rev-parse --short HEAD)$(git diff --quiet || echo -dirty)"
+
+if [ "${2:-}" != "--no-build" ]; then
+	echo "== UI =="
+	docker run --rm -v "$(pwd)":/src -w /src/web node:22-alpine npm run build >/dev/null
+	echo "== binaries ($VERSION) =="
+	mkdir -p bin/linux-amd64 bin/agents
+	GOARCH=amd64 GOOS=linux ./scripts/go build -trimpath -ldflags "-s -w -X main.version=$VERSION" \
+		-o bin/linux-amd64/slowpoke-server ./cmd/slowpoke-server
+	for arch in amd64 arm64; do
+		GOARCH=$arch GOOS=linux ./scripts/go build -trimpath \
+			-ldflags "-s -w -X github.com/getslowpoke/slowpoke/internal/agent.Version=$VERSION" \
+			-o "bin/agents/slowpoke-agent-linux-$arch" ./cmd/slowpoke-agent
+	done
+fi
+
+echo "== copy to $HOST =="
+scp -q bin/linux-amd64/slowpoke-server bin/agents/slowpoke-agent-linux-amd64 bin/agents/slowpoke-agent-linux-arm64 "$HOST:/tmp/"
+LOCAL="$(shasum -a 256 bin/linux-amd64/slowpoke-server | cut -d' ' -f1)"
+REMOTE="$(ssh "$HOST" 'sha256sum /tmp/slowpoke-server' | cut -d' ' -f1)"
+[ "$LOCAL" = "$REMOTE" ] || { echo "checksum mismatch: $LOCAL != $REMOTE" >&2; exit 1; }
+
+ssh "$HOST" 'bash -s' <<'REMOTE_SCRIPT'
+set -eu
+STAMP="$(date +%Y%m%d-%H%M%S)"
+BACKUP="/root/slowpoke-backup-$STAMP"
+DB_DIR=/var/lib/slowpoke-server
+mkdir -p "$BACKUP"
+
+echo "-- stopping (agents buffer up to 240 payloads meanwhile)"
+systemctl stop slowpoke-server
+
+echo "-- backup in $BACKUP"
+for f in "$DB_DIR"/slowpoke.db "$DB_DIR"/slowpoke.db-wal "$DB_DIR"/slowpoke.db-shm; do
+	[ -f "$f" ] && cp -a "$f" "$BACKUP/"
+done
+cp -a /usr/local/bin/slowpoke-server "$BACKUP/slowpoke-server.previous"
+ls -lh "$BACKUP"
+
+echo "-- installing"
+install -m 755 /tmp/slowpoke-server /usr/local/bin/slowpoke-server
+install -d -m 755 /usr/local/share/slowpoke
+install -m 755 /tmp/slowpoke-agent-linux-amd64 /usr/local/share/slowpoke/slowpoke-agent-linux-amd64
+install -m 755 /tmp/slowpoke-agent-linux-arm64 /usr/local/share/slowpoke/slowpoke-agent-linux-arm64
+rm -f /tmp/slowpoke-server /tmp/slowpoke-agent-linux-amd64 /tmp/slowpoke-agent-linux-arm64
+/usr/local/bin/slowpoke-server version
+
+echo "-- starting (migrations run here)"
+systemctl start slowpoke-server
+sleep 6
+systemctl is-active slowpoke-server
+curl -fsS http://127.0.0.1:8090/healthz && echo
+journalctl -u slowpoke-server --since "-2 min" --no-pager | tail -6
+REMOTE_SCRIPT
+
+echo "== the server now hands out the agent =="
+echo "   curl -fsSL https://$HOST/install.sh | sudo sh -s -- --token spa_..."

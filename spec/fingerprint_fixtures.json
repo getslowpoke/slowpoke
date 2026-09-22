@@ -1,0 +1,22 @@
+[
+  {"name": "laravel bindings", "sql": "select * from `users` where `id` = ? limit 1", "fingerprint": "select * from users where id = ? limit ?"},
+  {"name": "slow log literals", "sql": "select * from `users` where `id` = 5 limit 1;", "fingerprint": "select * from users where id = ? limit ?"},
+  {"name": "performance_schema digest", "sql": "SELECT * FROM `users` WHERE `id` = ? LIMIT ?", "fingerprint": "select * from users where id = ? limit ?"},
+  {"name": "strings with escapes", "sql": "SELECT id FROM logs WHERE msg = 'it\\'s' AND note = 'a''b'", "fingerprint": "select id from logs where msg = ? and note = ?"},
+  {"name": "in list", "sql": "select * from orders where user_id in (1, 2, 3, 4) and status = 'paid'", "fingerprint": "select * from orders where user_id in (...) and status = ?"},
+  {"name": "in list of bindings", "sql": "select * from orders where user_id in (?, ?, ?)", "fingerprint": "select * from orders where user_id in (...)"},
+  {"name": "multi row insert", "sql": "INSERT INTO t (a, b) VALUES (1, 'x'), (2, 'y'), (3, 'z')", "fingerprint": "insert into t (a, b) values (...)"},
+  {"name": "postgres params", "sql": "SELECT * FROM \"users\" WHERE email = $1 AND age > $2", "fingerprint": "select * from users where email = ? and age > ?"},
+  {"name": "whitespace and operators", "sql": "select   *\n from t where a>=1   and b<>'x'  and c  <  2.5", "fingerprint": "select * from t where a >= ? and b <> ? and c < ?"},
+  {"name": "comments", "sql": "/* request 42 */ select count(*) as aggregate from `products`", "fingerprint": "select count(*) as aggregate from products"},
+  {"name": "identifiers with digits", "sql": "select t1.id from table2 t1 where t1.x = 10", "fingerprint": "select t1.id from table2 t1 where t1.x = ?"},
+  {"name": "json extract", "sql": "select * from `docs` where json_unquote(json_extract(`params`, '$.\"foglio\"')) = '12'", "fingerprint": "select * from docs where json_unquote(json_extract(params, ?)) = ?"},
+  {"name": "hex and negatives", "sql": "update t set flags = 0xFF, delta = -3 where id = 7", "fingerprint": "update t set flags = ?, delta = -? where id = ?"},
+  {"name": "parenthesis spacing", "sql": "select * from t where ( a = 1 ) and b in ( 'x' )", "fingerprint": "select * from t where (a = ?) and b in (...)"},
+  {"name": "python pyformat params (psycopg2, PyMySQL)", "sql": "SELECT name FROM customers WHERE id = %(id)s AND city = %s", "fingerprint": "select name from customers where id = ? and city = ?"},
+  {"name": "named params (PDO, SQLAlchemy text) but not postgres casts", "sql": "SELECT SUM(total) FROM orders WHERE customer_id::text = :customer AND status=:status", "fingerprint": "select sum(total) from orders where customer_id::text = ? and status = ?"},
+  {"name": "function with one binding is not an in list", "sql": "select id from customers where lower(city) = lower(%(c)s)", "fingerprint": "select id from customers where lower(city) = lower(?)"},
+  {"name": "performance_schema digest spacing matches the application text", "sql": "SELECT COUNT ( * ) AS `n` FROM `orders` WHERE LOWER ( `city` ) = ? OR `total` > ?", "fingerprint": "select count(*) as n from orders where lower(city) = ? or total > ?"},
+  {"name": "application text of the same query", "sql": "SELECT COUNT(*) AS n FROM orders WHERE lower(city) = ? OR total > ?", "fingerprint": "select count(*) as n from orders where lower(city) = ? or total > ?"},
+  {"name": "keywords keep their space before a parenthesis", "sql": "SELECT * FROM t WHERE id NOT IN (SELECT id FROM u) AND EXISTS (SELECT 1) AND a IN ( ? , ? )", "fingerprint": "select * from t where id not in (select id from u) and exists (select ?) and a in (...)"}
+]

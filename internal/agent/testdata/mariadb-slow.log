@@ -1,0 +1,7 @@
+# Time: 260916 10:00:03
+# User@Host: shop_app[shop_app] @ localhost []
+# Thread_id: 5  Schema: shop  QC_hit: No
+# Query_time: 4.000000  Lock_time: 0.000100  Rows_sent: 1  Rows_examined: 12760000
+# Rows_affected: 0  Bytes_sent: 120
+SET timestamp=1789552803;
+select count(*) as aggregate from `credits` where `user_id` = 42 and `is_used` = 0;

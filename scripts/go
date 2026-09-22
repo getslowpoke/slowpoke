@@ -1,0 +1,7 @@
+#!/bin/sh
+# Runs the Go toolchain in Docker, with persistent module and build caches.
+exec docker run --rm -i \
+  -v "$(cd "$(dirname "$0")/.." && pwd)":/src -w /src \
+  -v slowpoke-gomod:/go/pkg/mod -v slowpoke-gobuild:/root/.cache/go-build \
+  -e CGO_ENABLED=0 -e GOOS -e GOARCH \
+  golang:1.26-alpine go "$@"

@@ -1,0 +1,150 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", monospace;
+
+  --color-ink-950: #0b0b0e;
+  --color-ink-900: #111115;
+  --color-ink-850: #16161b;
+  --color-ink-800: #1c1c22;
+  --color-ink-700: #26262e;
+  --color-ink-600: #34343e;
+  --color-ink-500: #52525e;
+  --color-ink-400: #7c7c89;
+  --color-ink-300: #a6a6b2;
+  --color-ink-200: #cfcfd8;
+  --color-ink-100: #ececf1;
+
+  --color-poke-300: #ffb3c1;
+  --color-poke-400: #ff8fa6;
+  --color-poke-500: #ff6f8e;
+  --color-poke-600: #f0507a;
+
+  --color-good: #7ee0a1;
+  --color-warn: #f5c76a;
+  --color-bad: #ff7a7a;
+  --color-info: #8ab4ff;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-ink-950);
+  color: var(--color-ink-100);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-image:
+    radial-gradient(1200px 600px at 10% -10%, rgb(255 111 142 / 0.07), transparent 60%),
+    radial-gradient(900px 500px at 110% 0%, rgb(138 180 255 / 0.05), transparent 60%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Grid and flex items default to min-width: auto, so a long query stretches the
+   layout sideways. Let them shrink: long text truncates or wraps instead. */
+.grid > *,
+.flex > * {
+  min-width: 0;
+}
+
+button,
+[role="button"],
+select,
+summary,
+a {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: rgb(255 111 142 / 0.35);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility card {
+  @apply rounded-2xl border border-ink-700/70 bg-ink-900/80 backdrop-blur-sm;
+}
+
+@utility card-pad {
+  @apply p-5;
+}
+
+@utility label {
+  @apply text-[11px] font-medium uppercase tracking-[0.08em] text-ink-400;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition
+    disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@utility btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 bg-poke-500 text-ink-950 hover:bg-poke-400 active:bg-poke-600;
+}
+
+@utility btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 border border-ink-700 bg-ink-850 text-ink-200 hover:border-ink-600 hover:bg-ink-800;
+}
+
+@utility input {
+  @apply w-full rounded-xl border border-ink-700 bg-ink-950/60 px-3 py-2 text-sm text-ink-100 placeholder:text-ink-500
+    outline-none transition focus:border-poke-500/70 focus:ring-2 focus:ring-poke-500/20;
+}
+
+@utility chip {
+  @apply inline-flex items-center gap-1 rounded-full border border-ink-700 bg-ink-850 px-2 py-0.5 text-[11px] text-ink-300;
+}
+
+@utility row-hover {
+  @apply border-t border-ink-800 transition hover:bg-ink-850/70;
+}
+
+@utility code {
+  @apply rounded-xl border border-ink-700 bg-ink-950 p-3 font-mono text-[12.5px] leading-relaxed text-ink-200;
+}
+
+/* Pages fade in without ever hiding: no leave phase that can get stuck. */
+.page-in {
+  animation: page-in 0.22s ease-out both;
+}
+@keyframes page-in {
+  from {
+    opacity: 0.35;
+    transform: translateY(3px);
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

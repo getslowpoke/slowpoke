@@ -1,0 +1,22 @@
+
+[16-Sep-2026 10:00:03]  [pool www] pid 123
+script_filename = /var/www/html/public/index.php
+[0x00007f1c2a813f20] sleep() /var/www/html/app/Http/Controllers/SlowController.php:12
+[0x00007f1c2a813e80] show() /var/www/html/vendor/laravel/framework/src/Illuminate/Routing/Controller.php:54
+[0x00007f1c2a813d10] run() /var/www/html/public/index.php:17
+
+[16-Sep-2026 10:00:08]  [pool www] pid 124
+script_filename = /var/www/html/public/index.php
+[0x00007f1c2a813f20] curl_exec() /var/www/html/vendor/guzzlehttp/guzzle/src/Handler/CurlHandler.php:44
+[0x00007f1c2a813e80] send() /var/www/html/vendor/guzzlehttp/guzzle/src/Client.php:100
+[0x00007f1c2a813d10] fetch() /var/www/releases/1134/app/Services/Pricing.php:88
+
+[16-Sep-2026 10:00:41]  [pool www] pid 125
+script_filename = /var/www/app/public/index.php
+[0x00007f1c2a813f20] usleep() /var/www/app/routes/web.php:40
+[0x00007f1c2a813e80] {closure}() /var/www/app/vendor/laravel/framework/src/Illuminate/Routing/CallableDispatcher.php:39
+
+[16-Sep-2026 10:00:52]  [pool www] pid 126
+script_filename = /var/www/app/public/index.php
+[0x00007f1c2a813f20] Composer\Autoload\{closure}() /var/www/app/vendor/composer/ClassLoader.php:427
+[0x00007f1c2a813e80] loadClass() /var/www/app/vendor/composer/ClassLoader.php:380

@@ -1,0 +1,9 @@
+{
+  "name": "express-shop",
+  "private": true,
+  "dependencies": {
+    "@slowpokedev/node": "file:/slowpoke-node",
+    "express": "^4.21.2",
+    "mysql2": "^3.14.0"
+  }
+}

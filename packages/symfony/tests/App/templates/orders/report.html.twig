@@ -1,0 +1,5 @@
+<ul>
+{% for order in orders %}
+    <li>{{ db.fetchOne('SELECT name FROM customers WHERE id = ?', [order.customer_id]) }}</li>
+{% endfor %}
+</ul>

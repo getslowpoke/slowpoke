@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Tests on SQLite and PostgreSQL
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: slowpoke
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # The UI is embedded in the server binary, so it is built first and its output must be
+      # the one committed: a stale dist/ in a pull request shows up here.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      # What the wizard writes into agent.yaml is code with tests of its own: a source it offers
+      # that the agent cannot read would be caught here.
+      - run: npm test
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+
+      # The installer and the scripts are the first thing anyone runs, often piped into a shell:
+      # a typo there greets a stranger before any Go code does.
+      - name: Shell scripts
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck install.sh scripts/deploy scripts/test scripts/go scripts/check-stores internal/server/api/install.sh
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go vet ./...
+      - name: Tests on SQLite
+        run: go test ./...
+      - name: The same tests on PostgreSQL
+        env:
+          SLOWPOKE_TEST_POSTGRES: postgres://postgres:test@127.0.0.1:5432/slowpoke?sslmode=disable
+        run: go test ./internal/server/... ./internal/agent/
+
+      - name: The committed UI is the one this source builds
+        run: git diff --exit-code --stat -- internal/server/web/dist || (echo "::error::run the UI build and commit internal/server/web/dist" && exit 1)

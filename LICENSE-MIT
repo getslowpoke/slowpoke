@@ -1,0 +1,43 @@
+Slowpoke is licensed in two halves, because its two halves have different jobs.
+
+The agent and the framework packages run inside other people's machines and applications, so
+they are MIT: nothing about them should ever need a legal conversation. The paths below are
+covered by this licence, and by no other:
+
+    cmd/slowpoke-agent/          the agent binary
+    internal/agent/              everything the agent does, including detect/
+    internal/protocol/           the wire between agents and servers
+    internal/fingerprint/        SQL normalisation and redaction
+    internal/sqlsafe/            what may be EXPLAINed
+    packages/                    the framework packages (also published separately)
+    spec/                        the fixtures shared across languages
+
+Everything else — the server, the panel, the game, the debt, the documentation — is under the
+GNU Affero General Public License v3.0 or later; see LICENSE. Using it inside your company,
+modified or not, asks nothing of you. Offering it to others as a service asks you to publish
+your changes.
+
+--------------------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2026 Christian Cannata
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
