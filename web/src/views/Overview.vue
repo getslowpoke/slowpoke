@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, latency, duration, ago, day, clock, compact, scoreColor } from '../lib/format.js'
 import State from '../components/State.vue'
@@ -14,10 +14,11 @@ import Empty from '../components/Empty.vue'
 import Popover from '../components/Popover.vue'
 import InstallWizard from '../components/InstallWizard.vue'
 import { componentName, componentNow, liveTileInWords, pointsToGain, scoreRowInWords, scoreTrend } from '../lib/settingsWords.js'
+import { activityTitle, badgeInWords, seasonName } from '../lib/activityWords.js'
 
 const props = defineProps({ project: Object })
 const wizard = ref(false)
-const { data, error, loading, reload } = useLoad(() => api.get(`/api/projects/${props.project.slug}/overview`), { every: 30000 })
+const { data, error, loading, reload } = useGet(() => `/api/projects/${props.project.slug}/overview`, { every: 30000 })
 
 // The fleet, offline first: those are the ones worth seeing without opening anything. Muted
 // machines go last, offline or not: the team chose not to hear about them.
@@ -38,14 +39,24 @@ const hasData = computed(() => (data.value?.chart?.length || 0) > 0 || (data.val
 const chart = computed(() => {
   const days = data.value?.chart || []
   const labels = days.map((d) => day(d.day))
-  const markers = []
+  // One line per day, not per deploy: a real team ships several times a day and ten labels on one
+  // pixel read as a smear. A day with a deploy that made things worse is red, whatever else it had.
+  const perDay = new Map()
   for (const d of data.value?.deploys || []) {
     const i = days.findIndex((x) => x.day === d.day)
-    if (i >= 0) {
-      const v = d.impact?.verdict
-      markers.push({ index: i, label: d.version || d.commit?.slice(0, 7), color: v === 'better' ? '#7ee0a1' : v === 'worse' ? '#ff7a7a' : '#8b8b95' })
-    }
+    if (i < 0) continue
+    const m = perDay.get(i) || { index: i, count: 0, worse: false, better: false, name: '' }
+    m.count++
+    m.worse ||= d.impact?.verdict === 'worse'
+    m.better ||= d.impact?.verdict === 'better'
+    m.name = d.version || d.commit?.slice(0, 7) || ''
+    perDay.set(i, m)
   }
+  const markers = [...perDay.values()].map((m) => ({
+    index: m.index,
+    label: m.count > 1 ? t('{n} deploys', { n: m.count }) : m.name.split('@').pop(),
+    color: m.worse ? '#ff7a7a' : m.better ? '#7ee0a1' : '#8b8b95',
+  }))
   return {
     labels,
     markers,
@@ -88,11 +99,8 @@ function itemLink(item) {
         <div class="label">{{ project.timezone }}</div>
         <h1 class="mt-1 text-2xl font-semibold tracking-tight sm:text-[28px]">{{ project.name }}</h1>
       </div>
-      <div class="flex items-center gap-3 text-xs text-ink-400">
-        <button class="btn-primary !py-1.5 text-xs" @click="wizard = true">+ {{ t('Add agent') }}</button>
-        <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-good opacity-60" /><span class="relative inline-flex h-2 w-2 rounded-full bg-good" /></span>
-        {{ t('Live') }} · {{ t('last 15 minutes') }}
-      </div>
+      <!-- Adding a machine is rare once the fleet is in: it must not be the loudest thing on the page. -->
+      <button class="btn-ghost !py-1.5 text-xs" @click="wizard = true">+ {{ t('Add agent') }}</button>
     </div>
 
     <section v-if="!hasData" class="card relative overflow-hidden px-6 py-14 text-center sm:px-12">
@@ -122,7 +130,7 @@ function itemLink(item) {
         <section class="card relative overflow-hidden p-6">
           <div class="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full opacity-20 blur-3xl" :style="{ background: level?.color || '#ff6f8e' }" />
           <div class="relative flex flex-col gap-6 sm:flex-row sm:items-center">
-            <ScoreRing :score="today.score ?? null" :color="level?.color || '#ff6f8e'" :size="176" :label="`${t('Today')} · ${t('so far')}`" />
+            <ScoreRing :score="today.score ?? null" :color="level?.color || '#ff6f8e'" :size="176" :label="today.window === 'day' ? `${t('Today')} · ${t('so far')}` : t('Last 24 hours')" />
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-1.5">
                 <span class="label">{{ t('Speed index') }}</span>
@@ -159,7 +167,7 @@ function itemLink(item) {
 
           <div v-if="today.components?.length" class="relative mt-6 border-t border-ink-800 pt-5">
             <div class="label mb-1">{{ t('Where to gain points') }}</div>
-            <p class="mb-3 text-xs text-ink-500">{{ t('From the measure that loses the most today. The server sends them already in this order.') }}</p>
+            <p class="mb-3 text-xs text-ink-500">{{ t('From the measure that loses the most in the last 24 hours. The server sends them already in this order.') }}</p>
             <div class="grid gap-2">
               <div v-for="c in today.components" :key="c.key" class="rounded-xl bg-ink-850/60 px-3 py-2"
                 :title="scoreRowInWords(c, today.components)">
@@ -181,7 +189,12 @@ function itemLink(item) {
           </div>
         </section>
 
-        <section class="grid gap-4">
+        <section class="grid content-start gap-4">
+          <div>
+          <div class="mb-2 flex items-center gap-2 text-xs text-ink-400">
+            <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-good opacity-60" /><span class="relative inline-flex h-2 w-2 rounded-full bg-good" /></span>
+            {{ t('Live') }} · {{ t('last 15 minutes') }}
+          </div>
           <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <div class="card p-4">
               <div class="label" :title="liveTileInWords('requests')">{{ t('requests/min') }}</div>
@@ -205,6 +218,7 @@ function itemLink(item) {
             <div class="card p-4">
               <div class="label" :title="liveTileInWords('php_stalls')">{{ t('PHP stuck') }}</div>
               <div class="num mt-1 text-2xl font-semibold">{{ num(live.php_stalls) }}</div>
+              <div class="mt-1 text-[11px] text-ink-500">{{ t('times PHP got stuck') }}</div>
             </div>
             <!-- A fleet is a list, not a wall: a few names, the rest one click away. Offline
                  machines come first, because those are the ones worth seeing without asking. -->
@@ -217,6 +231,7 @@ function itemLink(item) {
                 <button v-if="hiddenHosts" class="chip hover:border-ink-500" @click="allHosts = true">+{{ hiddenHosts }}</button>
               </div>
             </div>
+          </div>
           </div>
 
           <div class="card relative overflow-hidden p-5">
@@ -235,7 +250,10 @@ function itemLink(item) {
               </div>
             </div>
             <router-link v-if="data.goal" :to="`/projects/${project.slug}/missions`" class="mt-3 block">
-              <div class="flex justify-between text-[11px] text-ink-400"><span>🎯 {{ t('Weekly debt budget') }}</span><span class="num">{{ duration(data.goal.repaid_seconds_per_day) }} / {{ duration(data.goal.goal_seconds_per_day) }}</span></div>
+              <div class="flex justify-between gap-2 text-[11px] text-ink-400">
+                <span>🎯 {{ t("This week's goal") }}</span>
+                <span class="num" :class="data.goal.reached ? 'text-good' : ''">{{ t('repaid {done} of {goal} per day', { done: duration(data.goal.repaid_seconds_per_day), goal: duration(data.goal.goal_seconds_per_day) }) }}<template v-if="data.goal.reached"> ✓</template></span>
+              </div>
               <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-ink-800"><div class="h-full rounded-full" :class="data.goal.reached ? 'bg-good' : 'bg-poke-500'" :style="{ width: Math.max(2, data.goal.progress * 100) + '%' }" /></div>
             </router-link>
             <div class="mt-4 space-y-1.5">
@@ -259,7 +277,7 @@ function itemLink(item) {
         </div>
       </section>
 
-      <div class="mt-4 grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+      <div class="mt-4 grid gap-4 xl:grid-cols-[1.4fr_1fr] xl:items-start">
         <section class="card p-5">
           <div class="flex items-center justify-between">
             <div class="label">{{ t('Last 30 days') }}</div>
@@ -288,7 +306,7 @@ function itemLink(item) {
           <div class="label">{{ t('Points') }}</div>
           <div class="mt-2 flex items-end gap-2">
             <div class="num text-4xl font-semibold tracking-tight text-poke-400">{{ num(data.points?.season) }}</div>
-            <div class="pb-1 text-sm text-ink-400">{{ t('this season') }} · {{ data.points?.season_name }}</div>
+            <div class="pb-1 text-sm text-ink-400">{{ t('this season') }} · {{ seasonName(data.points?.season_start, data.points?.season_name) }}</div>
           </div>
           <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div class="rounded-xl bg-ink-850/60 p-3"><div class="num text-lg font-medium">{{ num(data.points?.last_7_days) }}</div><div class="text-xs text-ink-400">{{ t('last 7 days') }}</div></div>
@@ -312,14 +330,14 @@ function itemLink(item) {
                 <div class="flex items-center gap-2.5">
                   <span class="text-2xl" :class="b.unlocked ? '' : 'grayscale opacity-60'">{{ b.icon }}</span>
                   <div>
-                    <div class="text-sm font-medium text-ink-100">{{ b.title }}</div>
+                    <div class="text-sm font-medium text-ink-100">{{ badgeInWords(b).title }}</div>
                     <div class="text-[11px]" :class="b.unlocked ? 'text-good' : 'text-ink-500'">
                       {{ b.unlocked ? `✓ ${t('Unlocked')} · ${day(b.day)}` : `🔒 ${t('Locked')}` }}
                     </div>
                   </div>
                 </div>
-                <p class="mt-2 text-xs leading-relaxed text-ink-300">{{ b.description }}</p>
-                <div class="mt-2 text-[11px] text-poke-300">+25 pts</div>
+                <p class="mt-2 text-xs leading-relaxed text-ink-300">{{ badgeInWords(b).description }}</p>
+                <div class="mt-2 text-[11px] text-poke-300">{{ t('+{n} pts', { n: 25 }) }}</div>
               </template>
             </Popover>
           </div>
@@ -331,7 +349,7 @@ function itemLink(item) {
             <div v-for="a in data.activity" :key="a.id" class="flex gap-3 text-sm">
               <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-ink-850">{{ a.icon || '•' }}</span>
               <div class="min-w-0">
-                <div class="line-clamp-2 text-ink-200">{{ a.title }}</div>
+                <div class="line-clamp-2 text-ink-200">{{ activityTitle(a) }}</div>
                 <div class="text-xs text-ink-500">{{ ago(a.created_at) }}</div>
               </div>
             </div>

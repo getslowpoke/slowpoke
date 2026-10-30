@@ -93,32 +93,49 @@ func (s *Server) handleOverview(w http.ResponseWriter, r *http.Request, p projec
 		return
 	}
 	out["chart"] = days
-	today := map[string]any{"score": nil}
-	var todayRow struct {
+	// The index is the last 24 hours: the calendar day alone reads 100 at night, when nobody is
+	// using the app. What the day has scored so far stays as a footnote.
+	type scoreRow struct {
 		score      *float64
 		partial    bool
 		hours      float64
 		components string
 	}
+	var win, day scoreRow
 	todayKey := now.In(p.Location()).Format("2006-01-02")
-	err = s.DB.Q().Row(ctx, "SELECT score, partial, hours, components FROM score_days WHERE project_id = ? AND day = ?", p.ID, todayKey).Scan(&todayRow.score, &todayRow.partial, &todayRow.hours, &todayRow.components)
+	err = s.DB.Q().Row(ctx, "SELECT score, partial, hours, components FROM score_days WHERE project_id = ? AND day = ?", p.ID, todayKey).Scan(&day.score, &day.partial, &day.hours, &day.components)
+	hasDay := err == nil
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		serverError(w, err)
 		return
 	}
-	if err == nil {
+	err = s.DB.Q().Row(ctx, "SELECT score, partial, hours, components FROM score_window WHERE project_id = ?", p.ID).Scan(&win.score, &win.partial, &win.hours, &win.components)
+	hasWindow := err == nil
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		serverError(w, err)
+		return
+	}
+	today := map[string]any{"score": nil}
+	shown, window := day, "day"
+	if hasWindow {
+		shown, window = win, "24h"
+	}
+	if hasWindow || hasDay {
 		var comps []score.ComponentResult
-		_ = json.Unmarshal([]byte(todayRow.components), &comps)
+		_ = json.Unmarshal([]byte(shown.components), &comps)
 		sort.SliceStable(comps, func(i, j int) bool { return comps[i].Lost > comps[j].Lost })
-		today = map[string]any{"score": todayRow.score, "partial": todayRow.partial, "hours": todayRow.hours, "components": comps}
-		if todayRow.score != nil {
-			today["level"] = p.Settings.LevelFor(*todayRow.score)
-			if next := p.Settings.NextLevel(*todayRow.score); next != nil {
-				today["next_level"] = map[string]any{"name": next.Name, "icon": next.Icon, "min": next.Min, "missing": r2(next.Min - *todayRow.score)}
+		today = map[string]any{"score": shown.score, "partial": shown.partial, "hours": shown.hours, "components": comps, "window": window}
+		if hasDay && hasWindow {
+			today["so_far"] = map[string]any{"score": day.score, "hours": day.hours, "partial": day.partial}
+		}
+		if shown.score != nil {
+			today["level"] = p.Settings.LevelFor(*shown.score)
+			if next := p.Settings.NextLevel(*shown.score); next != nil {
+				today["next_level"] = map[string]any{"name": next.Name, "icon": next.Icon, "min": next.Min, "missing": r2(next.Min - *shown.score)}
 			}
 			for i := len(days) - 1; i >= 0; i-- {
 				if days[i].Day < todayKey && days[i].Closed && days[i].Score != nil {
-					today["delta"] = r2(*todayRow.score - *days[i].Score)
+					today["delta"] = r2(*shown.score - *days[i].Score)
 					break
 				}
 			}
@@ -260,7 +277,7 @@ func (s *Server) points(ctx context.Context, p project.Project) (map[string]any,
 	if err := q.Row(ctx, "SELECT COALESCE(SUM(points),0) FROM point_entries WHERE project_id = ? AND created_at >= ?", p.ID, now.Add(-7*24*time.Hour).Unix()).Scan(&week); err != nil {
 		return nil, err
 	}
-	return map[string]any{"total": total, "season": season, "season_name": seasonStart.Format("January 2006"), "last_7_days": week}, nil
+	return map[string]any{"total": total, "season": season, "season_name": seasonStart.Format("January 2006"), "season_start": seasonStart.Format("2006-01"), "last_7_days": week}, nil
 }
 
 type missionItem struct {
@@ -291,11 +308,16 @@ type missionItem struct {
 	game.Life
 }
 
-func (s *Server) missionList(ctx context.Context, p project.Project, where string, limit int) ([]missionItem, error) {
+func (s *Server) missionList(ctx context.Context, p project.Project, where string, limit int, args ...any) ([]missionItem, error) {
+	return s.missionListWith(ctx, p, missionctx.NewQueries(s.DB, p, time.Now()), where, limit, args...)
+}
+
+// missionListWith shares one read of the project's costs between the lists of a page.
+func (s *Server) missionListWith(ctx context.Context, p project.Project, queries *missionctx.Queries, where string, limit int, args ...any) ([]missionItem, error) {
 	rows, err := s.DB.Q().Query(ctx, `SELECT m.id, m.type, m.kind, m.target, m.label, m.baseline, m.current, m.points, m.status, m.good_windows, m.person, m.opened_at, m.due_at, m.closed_at, m.effort,
 		CASE WHEN d.id IS NULL THEN NULL ELSE COALESCE(NULLIF(d.version, ''), d.commit_sha) END
 		FROM missions m LEFT JOIN deploys d ON d.id = m.deploy_id
-		WHERE m.project_id = ? AND `+where+` ORDER BY CASE WHEN m.type = 'boss' THEN 0 ELSE 1 END, COALESCE(m.closed_at, 0) DESC, m.points DESC LIMIT ?`, p.ID, limit)
+		WHERE m.project_id = ? AND `+where+` ORDER BY CASE WHEN m.type = 'boss' THEN 0 ELSE 1 END, COALESCE(m.closed_at, 0) DESC, m.points DESC LIMIT ?`, append(append([]any{p.ID}, args...), limit)...)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +359,7 @@ func (s *Server) missionList(ctx context.Context, p project.Project, where strin
 	for i := range out {
 		out[i].Life = lives[out[i].ID]
 		if out[i].Effort == "" {
-			out[i].Effort = s.estimateEffort(ctx, p, out[i].Type, out[i].Kind, out[i].Target)
+			out[i].Effort = estimateEffort(ctx, queries, out[i].Type, out[i].Kind, out[i].Target)
 			out[i].EffortAuto = true
 		}
 		out[i].ROI = debt.ROI(out[i].CostPerDay, out[i].Effort)
@@ -345,10 +367,10 @@ func (s *Server) missionList(ctx context.Context, p project.Project, where strin
 	return out, nil
 }
 
-func (s *Server) estimateEffort(ctx context.Context, p project.Project, missionType, kind, target string) string {
+func estimateEffort(ctx context.Context, queries *missionctx.Queries, missionType, kind, target string) string {
 	var diagnoses []doctor.Diagnosis
 	if kind == "query" {
-		if q, err := missionctx.LoadQuery(ctx, s.DB, p, target, time.Now()); err == nil {
+		if q, err := queries.Load(ctx, target); err == nil {
 			diagnoses = q.Diagnoses
 		}
 	}
@@ -794,7 +816,7 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, p project.P
 		in.Link = s.PublicURL + "/projects/" + p.Slug + "/queries/" + hash
 	}
 
-	missions, err := s.missionList(ctx, p, "m.kind = 'query' AND m.target = '"+strings.ReplaceAll(hash, "'", "")+"'", 10)
+	missions, err := s.missionList(ctx, p, "m.kind = 'query' AND m.target = ?", 10, hash)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -873,8 +895,13 @@ func (s *Server) handleEndpoint(w http.ResponseWriter, r *http.Request, p projec
 		serverError(w, err)
 		return
 	}
+	missions, err := s.missionList(ctx, p, "m.kind = 'endpoint' AND m.target = ?", 10, source+" "+endpoint)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
 	days := s.Metrics.ObservedDays(ctx, p.ID, 7*24*time.Hour, now)
-	writeJSON(w, http.StatusOK, map[string]any{"source": source, "endpoint": endpoint, "requests": total, "avg": r2(sumTotal / math.Max(1, float64(total))), "max": r2(maxTotal),
+	writeJSON(w, http.StatusOK, map[string]any{"source": source, "endpoint": endpoint, "missions": missions, "requests": total, "avg": r2(sumTotal / math.Max(1, float64(total))), "max": r2(maxTotal),
 		"slow": slowTotal, "e5": e5Total, "timeline": timeline, "queries": queries,
 		"outbound": outbound, "outbound_seconds_per_day": r2(outbound.Seconds / days), "exclusion": s.exclusionOf(r, p, exclude.KindEndpoint, endpoint)})
 }
@@ -902,12 +929,13 @@ func routeMatches(route, method, path string) bool {
 
 func (s *Server) handleMissions(w http.ResponseWriter, r *http.Request, p project.Project) {
 	ctx := r.Context()
-	open, err := s.missionList(ctx, p, "m.status = 'open'", 50)
+	queries := missionctx.NewQueries(s.DB, p, time.Now())
+	open, err := s.missionListWith(ctx, p, queries, "m.status = 'open'", 50)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	closed, err := s.missionList(ctx, p, "m.status <> 'open'", 50)
+	closed, err := s.missionListWith(ctx, p, queries, "m.status <> 'open'", 50)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -1241,12 +1269,13 @@ func (s *Server) handleDebtReport(w http.ResponseWriter, r *http.Request, p proj
 		serverError(w, err)
 		return
 	}
-	open, err := s.missionList(ctx, p, "m.status = 'open'", 50)
+	queries := missionctx.NewQueries(s.DB, p, time.Now())
+	open, err := s.missionListWith(ctx, p, queries, "m.status = 'open'", 50)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	closed, err := s.missionList(ctx, p, "m.status IN ('completed', 'defeated')", 50)
+	closed, err := s.missionListWith(ctx, p, queries, "m.status IN ('completed', 'defeated')", 50)
 	if err != nil {
 		serverError(w, err)
 		return

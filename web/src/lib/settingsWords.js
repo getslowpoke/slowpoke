@@ -149,6 +149,8 @@ export const eventNames = {
   deploy_neutral: 'A deploy changed nothing',
   command_overlap: 'Two scheduled commands run over each other',
   debt_goal: 'The weekly debt goal is reached',
+  boss_deadline: 'A boss escapes in 2 hours',
+  leaderboard: 'Somebody overtakes a colleague in points',
 }
 
 /** What a rule does, said out loud: "Slack #perf gets a message when a boss appears." */
@@ -239,19 +241,23 @@ export function effortInWords(effort) {
  */
 export function missionInWords(mission, settings = {}) {
   const cost = Number(mission.current ?? mission.baseline) || 0
+  // The server judges against the cost when the mission opened: the target is a share of that, and
+  // once a fix has landed "half of today" would be a goal that moves as you walk towards it.
+  const start = Number(mission.baseline ?? mission.current) || 0
   const ratio = Number(settings.target_ratio ?? 0.5)
   const hours = Number(settings.window_hours ?? 24)
   const need = Number(mission.need_windows) || 0
   const done = Number(mission.good_windows) || 0
-  if (!need) {
-    return t('It costs {cost} of waiting per day.', { cost: duration(cost) })
-  }
-  return t('It costs {cost} of waiting per day. Won when it stays under {target} for {time} ({done} so far).', {
-    cost: duration(cost),
-    target: duration(cost * ratio),
+  const moved = Math.round(start) !== Math.round(cost) && duration(start) !== duration(cost)
+  const costs = moved
+    ? t('It cost {start} of waiting per day, now {cost}.', { start: duration(start), cost: duration(cost) })
+    : t('It costs {cost} of waiting per day.', { cost: duration(cost) })
+  if (!need) return costs
+  return `${costs} ${t('Won when it stays under {target} for {time} ({done} so far).', {
+    target: duration(start * ratio),
     time: countedWindows(need, hours),
     done: countedWindows(done, hours),
-  })
+  })}`
 }
 
 /** What an hour spent on this mission gives back. */
@@ -376,7 +382,8 @@ export const componentNames = {
 
 export function componentName(component) {
   const label = component?.label || ''
-  return componentNames[label] ? t(componentNames[label]) : label
+  // A project created after the rename saved the new English label: it still needs its translation.
+  return t(componentNames[label] || label)
 }
 
 /** How long a mission has held so far: "1 of 2 days", never "1/2 good windows". */
@@ -418,10 +425,10 @@ export function pointsToGain(component) {
   return lost < 0.05 ? t('full marks') : t('+{n} points', { n: Math.round(lost * 10) / 10 })
 }
 
-/** Where this measure stands today against the line where it stops losing points. */
+/** Where this measure stands over the last 24 hours against the line where it stops losing points. */
 export function componentNow(component) {
   if (!component?.available) return t('nobody is measuring this yet')
-  return t('today {now} · full marks up to {goal}', {
+  return t('last 24 h {now} · full marks up to {goal}', {
     now: valueInWords(component.metric, component.value),
     goal: valueInWords(component.metric, component.good),
   })

@@ -145,11 +145,24 @@ Nothing answers on http://127.0.0.1:$PORT . What it says about itself:
 
 host=$(hostname -I 2>/dev/null | awk '{print $1}')
 [ -n "${host:-}" ] || host=127.0.0.1
+
+# Until an administrator exists, the first visit asks for this code: without it, whoever reached
+# port $PORT first would become the administrator. An older image has no setup-code command and
+# no code to ask for, so nothing is printed then.
+code=$(docker compose exec -T server slowpoke-server setup-code 2>/dev/null | tr -d '\r' |
+	grep -E '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$' || true)
+if [ -n "$code" ]; then
+	open_line="Open  http://$host:$PORT/setup?code=$code
+     and create the administrator (setup code: $code), then the first project."
+else
+	open_line="Open  http://$host:$PORT  and create the first user and the first project."
+fi
+
 cat <<END
 
 Slowpoke is up.
 
-  1. Open  http://$host:$PORT  and create the first user and the first project.
+  1. $open_line
   2. On every machine you want to watch, run the line the panel gives you:
        curl -fsSL http://$host:$PORT/install.sh | sudo sh -s -- --token spa_...
 

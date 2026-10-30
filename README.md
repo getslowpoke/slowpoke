@@ -1,105 +1,176 @@
 <p align="center">
-  <a href="https://getslowpoke.com"><img src="docs/assets/banner.png" alt="Slowpoke: technical debt with a price. Every slow page and query priced in the seconds your users wait each day, and paid back by your team as missions." width="100%"></a>
+  <a href="https://getslowpoke.com"><img src="docs/assets/banner.png" alt="Slowpoke: know what to fix first. Measure the daily cost of performance debt, prioritise the work and verify the result." width="100%"></a>
 </p>
 
 <h1 align="center">🐢 Slowpoke</h1>
 
 <p align="center">
-  <b>Find out what your slow code costs, in seconds your users wait every day.<br>
-  Then turn paying it back into a game your team wants to win.</b>
+  <b>Know which performance debt to fix first.</b><br>
+  Measure the daily cost. Give your team a starting point. Show what improved.
 </p>
 
 <p align="center">
-  <a href="https://getslowpoke.com"><b>Website</b></a> ·
-  <a href="https://demo.getslowpoke.com/demo"><b>Live demo</b></a> ·
-  <a href="docs/quickstart.md"><b>Quick start</b></a> ·
-  <a href="docs/README.md"><b>Docs</b></a> ·
-  <a href="https://getslowpoke.com/vs/"><b>Compared with 15 other tools</b></a>
+  <a href="https://demo.getslowpoke.com/demo"><b>Try the live demo →</b></a> ·
+  <a href="#quick-start"><b>Install Slowpoke</b></a> ·
+  <a href="docs/README.md">Documentation</a> ·
+  <a href="https://getslowpoke.com">Website</a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/getslowpoke/slowpoke/actions/workflows/ci.yml"><img alt="tests" src="https://github.com/getslowpoke/slowpoke/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="LICENSE"><img alt="server: AGPL-3.0" src="https://img.shields.io/badge/server-AGPL--3.0-blue"></a>
-  <a href="LICENSE-MIT"><img alt="agent and packages: MIT" src="https://img.shields.io/badge/agent%20%26%20packages-MIT-blue"></a>
-  <img alt="self-hosted" src="https://img.shields.io/badge/self--hosted-free-ff7a90">
-  <a href="#-it-never-slows-down-what-it-watches"><img alt="agent: 7 to 17 MB of memory" src="https://img.shields.io/badge/agent-7--17%20MB%20of%20memory-brightgreen"></a>
+  <a href="https://github.com/getslowpoke/slowpoke/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/getslowpoke/slowpoke/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="Server: AGPL-3.0" src="https://img.shields.io/badge/server-AGPL--3.0-blue"></a>
+  <a href="LICENSE-MIT"><img alt="Agent and packages: MIT" src="https://img.shields.io/badge/agent%20%26%20packages-MIT-blue"></a>
+  <img alt="Free and self-hosted" src="https://img.shields.io/badge/self--hosted-free-ff7a90">
 </p>
 
 ---
 
-## 🤔 Why
+Your app works. The backlog grows. Every sprint, performance work loses to the next feature because
+nobody can explain **which fix matters most**.
 
-You just took over an app someone else built. Everyone says it is "a bit slow". Nobody can tell you
-**how much** that costs, **where** it comes from or **what to fix first**, so it never gets fixed and
-every month it gets a little worse.
+Slowpoke measures the cumulative time cost of slow requests, queries and jobs on your own
+infrastructure. It turns costly issues into missions and tracks whether their cost stays down.
+Built for CTOs and engineering teams who need a clear priority and evidence that the work helped.
 
-Slowpoke answers those three questions with one number: **seconds of waiting per day**. A 40 ms query
-that runs 90,000 times a day costs your users **an hour every day**. That is more than the 30-second
-report everyone complains about, and now you can prove it.
+> **Small delays add up.** A 40 ms query running 90,000 times a day consumes **one hour of query
+> execution every day**. Slowpoke makes that recurring cost visible.
+>
+> This is accumulated execution time, not a claim about lost revenue or an hour saved for every user.
 
-```
-TECHNICAL DEBT                                          ▼ 6% vs yesterday
-2h 50m of waiting per day                        ✂ 20m 40s repaid per day
+**Free. Open source. Self-hosted.** The [live demo](https://demo.getslowpoke.com/demo) needs no sign-up
+and uses sample data. The product screenshots above and below show a demonstration project.
 
-  ⛁  select count(*) from invoices where customer_id = ?   1h 5m/day   N+1
-     app/Models/Order.php:88 · 31 times per request
-  ⇄  GET /account/orders                                  26m 28s/day
-  ∿  invoices.pdf                                         24m 58s/day
+## From “it feels slow” to a clear next step
 
-SPEED INDEX  59.7  🥉 Bronze          🔥 3 days without getting worse
-🏆 WINS          10m 16s of waiting saved per day, since yesterday
-```
+| Prioritise | Investigate | Verify |
+| :--- | :--- | :--- |
+| Rank performance debt by its daily cost, so frequent small delays get attention too. | Follow an issue to a query plan, diagnosis and application code origin where available. | Track missions after a change and share a debt report with the people funding the work. |
 
-These are real numbers from a real installation (seventeen machines, four applications) with the
-line of code behind every slow query.
+The workflow is simple: **measure → choose a mission → ship a fix → check the result**.
 
-> 👀 **Just want to look?** Open the [live demo](https://demo.getslowpoke.com/demo). No sign-up: it
-> logs you in and has 30 days of realistic data. It resets every night.
+- **Query doctor:** local `EXPLAIN` plans with findings such as full scans, N+1 queries and missing indexes.
+- **Missions and regressions:** measurable targets, deploy comparisons, and missions that close when costs stay down.
+- **A report for the business:** daily debt, effort estimates and progress to support the next sprint’s priorities.
+- **A little motivation:** levels, badges and regression “bosses” make progress visible to the team.
 
----
+Lower traffic can also reduce daily cost. Read the measurement history alongside the change before
+attributing an improvement to a fix. [How costs work →](docs/concepts.md)
 
-## 🚀 Get started in 3 commands
+## Quick start
 
-You need **Docker** on one server. That is all.
+You need **Docker for the server** and access to the machines you want to monitor.
 
-### 1. Start the panel
+### 1. Start Slowpoke
 
 ```sh
 curl -fsSL https://getslowpoke.com/install.sh | sh
 ```
 
-It starts Slowpoke and PostgreSQL, generates the database password on its own and asks you nothing.
-Then open **http://your-server:8080** and create the first user (the first user is the admin) and
-your first project.
+[Read the installer](install.sh). It starts the panel and PostgreSQL and generates the database
+password. Open the link it prints at the end, which carries the one-time setup code, create the first
+user and add a project.
+For a public deployment, follow the [HTTPS setup](docs/install/server.md).
 
-### 2. Put an agent on each machine
+### 2. Connect your first machine
 
-In the panel go to **Machines → Add agent**, copy the line it gives you and run it on the machine:
+Open **Machines → Add agent** and run the command the panel generates. It includes that machine’s
+token and downloads the agent from your own Slowpoke server.
 
-```sh
-curl -fsSL http://your-server:8080/install.sh | sudo sh -s -- --token spa_...
-```
+The agent discovers supported services and writes its configuration. Coverage checks show what it
+cannot read yet, with instructions for enabling the missing data sources.
 
-The agent looks at the machine and works out on its own what it can read (nginx sites, PHP-FPM pools,
-MySQL or PostgreSQL, Redis, your apps and their framework). It writes its own configuration and
-starts. Nothing on the machine is changed.
+### 3. Find your first priority
 
-### 3. Wait fifteen minutes
+Let the application serve real traffic, then open the ranked debt list. Inspect a costly item,
+choose a mission and start with the evidence.
 
-Your first costs show up on the panel, along with a **map** of your machines and a list of what the
-agent **cannot see yet**, each with the exact line that turns it on.
+[Full walkthrough](docs/quickstart.md) · [Server installation](docs/install/server.md) ·
+[Agent installation](docs/install/agent.md)
+
+<details>
+<summary><b>See your infrastructure, too</b></summary>
+
+Slowpoke maps the machines and connections its agents observe, helping you understand the
+infrastructure behind a slow application.
 
 <p align="center">
-  <img src="docs/assets/map.webp" alt="The infrastructure map Slowpoke draws by itself: machines, the services inside them, who talks to whom, and the ones nobody is measuring yet." width="90%">
+  <img src="docs/assets/map.webp" alt="Sample infrastructure map showing machines, their services and the connections between them." width="100%">
 </p>
 
-That's it. No code changes, no YAML to write, no account anywhere.
+</details>
 
----
+## Fits the stack you already run
 
-## 🧰 Every command you will need
+Start with access logs and database statistics. Add a framework package when you want application
+context and query origins.
 
-<details open>
+| Connect | Examples |
+| :--- | :--- |
+| Web servers | nginx, Apache, Caddy |
+| SQL databases | MySQL, MariaDB, PostgreSQL |
+| Caches, queues and search | Redis, RabbitMQ, MongoDB, Elasticsearch / OpenSearch |
+| Applications and hosts | PHP-FPM, jobs, scheduled commands and machine metrics |
+| Additional signals | OpenTelemetry, StatsD, Prometheus |
+
+<details>
+<summary><b>Optional framework packages</b></summary>
+
+| Framework | Install | Documentation |
+| :--- | :--- | :--- |
+| Laravel | `composer require slowpoke/laravel` | [Laravel](packages/laravel/README.md) |
+| Symfony | `composer require slowpoke/symfony` | [Symfony](packages/symfony/README.md) |
+| Django, FastAPI, Flask, Celery | `pip install slowpoke-python` | [Python](packages/python/README.md) |
+| Express, Fastify, pg, mysql2, BullMQ | `npm i @slowpokedev/node` | [Node.js](packages/node/README.md) |
+
+See each package’s documentation for supported versions and configuration. Without a package,
+you can still measure supported logs and database statistics; code origins depend on the source.
+
+</details>
+
+## Give your coding assistant a useful starting point
+
+A mission can carry the query, its plan and the file and line behind it. Your coding assistant
+reads that context over MCP and helps prepare a fix for you to review.
+
+> “Investigate my most expensive Slowpoke mission and propose a fix with a test.”
+
+Slowpoke runs no AI model internally. You choose the assistant and control its access; its own
+provider and settings govern where the context it reads is sent.
+
+[Connect your coding assistant →](docs/assistants.md)
+
+Prefer your existing workflow? Create issues in GitHub, GitLab, Linear, Jira, Asana, Trello or
+ClickUp, and send updates through Slack, Discord, Teams, Telegram or webhooks.
+[Task integrations](docs/tasks.md) · [Notifications](docs/notifications.md)
+
+## Your infrastructure. Your data.
+
+One server stores the measurements and serves the panel. An agent on each monitored machine
+collects observations and sends them to that server.
+
+- **Self-hosted storage:** your deployment controls the data and retention.
+- **Redacted query values by default:** original statements used for query plans stay on the machine that observed them.
+- **Local query plans:** the agent only explains statements it has already seen; the server cannot send it arbitrary SQL.
+- **Bounded collection:** buffers and a soft memory target keep overhead controlled; the agent reports its own resource use.
+
+[Security and data handling](docs/security.md) · [Architecture](docs/architecture.md)
+
+## Is Slowpoke for you?
+
+**Use it when** your team needs to prioritise recurring performance debt, understand the causes and
+show progress after shipping fixes.
+
+**Keep your APM** for incident response, distributed tracing, log management or session replay.
+Slowpoke focuses on the cost of performance debt and what to work on next.
+[Explore the comparisons →](https://getslowpoke.com/vs/)
+
+The software is free; you provide the infrastructure. No per-host, seat or event fees.
+
+## Operations reference
+
+The commands below are here when you need them. Start with the quick start above.
+
+<details>
 <summary><b>The server</b></summary>
 
 | What you want | Command |
@@ -117,7 +188,7 @@ That's it. No code changes, no YAML to write, no account anywhere.
 Run the `docker compose` commands from the install directory (`/opt/slowpoke` by default).
 </details>
 
-<details open>
+<details>
 <summary><b>The agent (one per machine)</b></summary>
 
 | What you want | Command |
@@ -131,7 +202,7 @@ Run the `docker compose` commands from the install directory (`/opt/slowpoke` by
 | Undo that change | `sudo slowpoke-agent enable-duration --undo` |
 | Print the version | `slowpoke-agent -version` |
 
-`enable-duration` is the only command that changes a file on your server. It tests the configuration
+`enable-duration` changes nginx logging configuration. It tests the configuration
 with `nginx -t`, reloads, checks your sites still answer and puts everything back if they don't.
 </details>
 
@@ -151,179 +222,39 @@ Drop `--dry-run` when the list looks right. `--only web-2,db-1` picks the machin
 The `spu_` token is a personal one: **Settings → Access → Create personal token**.
 </details>
 
-<details>
-<summary><b>Your coding assistant (Claude Code, Cursor, Codex, Copilot, Windsurf)</b></summary>
 
-Missions are exposed over MCP. Create a personal token, then for Claude Code:
+## Documentation
 
-```sh
-claude mcp add --transport http slowpoke https://your-server/mcp \
-  --header "Authorization: Bearer spu_..."
-```
+| I want to… | Start here |
+| :--- | :--- |
+| Install and configure Slowpoke | [Quick start](docs/quickstart.md) · [Configuration reference](docs/reference/agent.md) |
+| Understand the numbers | [Costs and speed index](docs/concepts.md) · [Debt report](docs/debt.md) |
+| Investigate and fix an issue | [Query doctor](docs/query-doctor.md) · [Missions](docs/game.md) |
+| Connect the team’s workflow | [Deploys](docs/deploys.md) · [Tasks](docs/tasks.md) · [Assistants](docs/assistants.md) |
+| Build on Slowpoke | [API and MCP](docs/api.md) · [Architecture](docs/architecture.md) |
 
-Then just ask:
+[Browse all documentation →](docs/README.md)
 
-> Fix Slowpoke mission 42
+## Status and contributing
 
-The assistant reads the brief (the query, the plan, the file and the line), writes the fix and opens a
-pull request. After the deploy Slowpoke measures the result and closes the mission by itself.
-Setup for the other assistants is in [docs/assistants.md](docs/assistants.md).
-</details>
+**Alpha, actively developed.** Review the [changelog](CHANGELOG.md) and installation documentation
+before upgrading. Found a wrong number, a missing integration or a rough edge?
+[Open an issue](https://github.com/getslowpoke/slowpoke/issues).
 
----
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow,
+checks and project conventions.
 
-## ✨ What you get
+## License
 
-| | |
-|---|---|
-| 💸 **Debt with a price** | Every slow endpoint, query, PHP stall, job and cron priced the same way: seconds of waiting per day. One list, sorted by what it costs. |
-| 🩺 **Query doctor** | Real `EXPLAIN` plans run next to your database, explained in plain words: full scans with the index to add, N+1, implicit conversions, deep offsets and eight more. |
-| 🎯 **Missions** | The most expensive items become missions with points. A mission closes when the cost stays down for three measurements, not when someone ticks a box. |
-| 👹 **Bosses** | A deploy that makes something twice as slow spawns a boss, named after that deploy, with a deadline. |
-| 🏅 **Speed index and badges** | One number from 0 to 100 for the whole app, with levels and badges a team can earn. |
-| 📊 **A report for your CEO** | Effort, return per hour of work, a weekly repayment budget and DORA metrics. The case for your next sprint, already written. |
-| 🗺️ **The map** | Who talks to whom, drawn from the live connections of every machine, including the services nobody measures yet. |
-| 📍 **The line of code** | With a framework package, every query points at the `file:line` that ran it. |
-| 🔔 **Notifications and tasks** | Slack, Discord, Teams, Telegram, webhooks. One click turns a mission into an issue in GitHub, GitLab, Linear, Jira, Asana, Trello or ClickUp. |
+- **Server and panel:** [AGPL-3.0-or-later](LICENSE).
+- **Agent and framework packages:** [MIT](LICENSE-MIT).
 
-## 📡 What it reads
-
-| Source | What Slowpoke learns |
-|---|---|
-| **nginx, Apache, Caddy** | Every endpoint (`/orders/{id}`), p95, errors, time lost per day |
-| **MySQL, MariaDB, PostgreSQL** | Slow log, `performance_schema`, `pg_stat_statements`, real `EXPLAIN` plans |
-| **PHP-FPM** | Where workers stall, with the application line |
-| **Jobs and cron** | Queued jobs and scheduled commands, and how much slower they got |
-| **The machine** | CPU (with iowait and steal), memory, swap, disk, network, the process behind each connection |
-| **Redis, RabbitMQ, MongoDB, Elasticsearch** | Slow commands, queue waits, collection scans, search time |
-| **Anything else** | OpenTelemetry, StatsD, Prometheus, or three lines in your code |
-
-### Framework packages (optional, for the line of code)
-
-| Framework | Install | Docs |
-|---|---|---|
-| Laravel | `composer require slowpoke/laravel` | [packages/laravel](packages/laravel/README.md) |
-| Symfony | `composer require slowpoke/symfony` | [packages/symfony](packages/symfony/README.md) |
-| Django, FastAPI, Flask, Celery | `pip install slowpoke-python` | [packages/python](packages/python/README.md) |
-| Express, Fastify, pg, mysql2, BullMQ | `npm i @slowpokedev/node` | [packages/node](packages/node/README.md) |
-
-Go and Ruby are next. Without a package you still get endpoints and queries priced, just without the
-file and line.
+See the license files for the terms that apply to each part of the project.
 
 ---
 
-## 🛡️ It never slows down what it watches
-
-That is the rule the whole project is built on, and every number here is measured:
-
-| | |
-|---|---|
-| **The agent** | 7 to 17 MB of memory and 0.2 s of CPU per hour on a one-core VPS. `GOMAXPROCS=1` and a 64 MB soft limit: under pressure it drops detail, it never grows. |
-| **The Laravel package** | About 2 µs per query, 0.09 ms for a request with fifty queries. It sends after the response: if the agent is slow or missing, you lose one trace, never a request. |
-| **Your database** | Read-only user. `EXPLAIN` only on statements already seen on that machine, inside a read-only transaction with a timeout. |
-| **Your servers** | Nothing is changed unless you run a command that says what it will write, tests it and can undo itself. |
-
-## 🔒 Your data stays yours
-
-The agent sends aggregated numbers to **your** server over outbound HTTPS. No inbound port, no cloud,
-no account. Query values are removed before anything leaves the machine
-(`where email = 'a@b.c'` becomes `where email = ?`) and the panel never connects to your databases.
-
-## 🏗️ How it fits together
-
-```mermaid
-flowchart LR
-  subgraph M["Your machines"]
-    A["slowpoke-agent<br/>logs · /proc · DB stats · OTLP"]
-  end
-  subgraph S["Your server"]
-    B["slowpoke-server<br/>PostgreSQL or SQLite"]
-  end
-  subgraph T["Your team"]
-    C["Panel"]
-    D["Coding assistant (MCP)"]
-    E["Slack, Jira, GitHub..."]
-  end
-  A -- "aggregated, once a minute<br/>outbound HTTPS only" --> B
-  B --> C
-  B --> D
-  B --> E
-```
-
-Two static binaries with no runtime dependencies. The server carries the panel inside it and hands
-out the agent it was built with, so your machines install from your own server and an agent is never
-newer than the server it talks to.
-
-## ❓ Quick answers
-
-<details>
-<summary><b>Is it a Datadog or New Relic replacement?</b></summary>
-
-For finding slow endpoints and slow queries, yes, and it costs nothing. It has no session replay, log
-management, status pages or on-call. You can run it next to the APM you already pay for: the APM
-says what is happening right now, Slowpoke says what it costs and what to fix first.
-</details>
-
-<details>
-<summary><b>Do I have to change my code?</b></summary>
-
-No. Access logs, slow logs and database statistics are enough to start. Add a framework package later
-if you want the file and line of every query.
-</details>
-
-<details>
-<summary><b>Is there AI inside?</b></summary>
-
-No. Slowpoke measures and computes. The thinking happens in your own coding assistant, with your model
-and your keys.
-</details>
-
-<details>
-<summary><b>What does it cost?</b></summary>
-
-Nothing. It is open source and runs on your machines. No hosts, seats or events counted. You keep as
-much history as your disk allows.
-</details>
-
-## 📚 Documentation
-
-[Quick start](docs/quickstart.md) ·
-[Install the server](docs/install/server.md) ·
-[Install the agent](docs/install/agent.md) ·
-[Concepts](docs/concepts.md) ·
-[The game](docs/game.md) ·
-[Debt](docs/debt.md) ·
-[Query doctor](docs/query-doctor.md) ·
-[Instrument your app](docs/instrument/README.md) ·
-[Coding assistants](docs/assistants.md) ·
-[Security](docs/security.md) ·
-[API](docs/api.md) ·
-[Architecture](docs/architecture.md) ·
-[FAQ](docs/faq.md)
-
-## 🚧 Status
-
-Alpha, and honest about it. It runs in production on a real fleet, the tests run on SQLite and
-PostgreSQL on every change, and the wire between agent and server is a contract with fixtures on both
-sides. Not there yet: a Helm chart and a Kubernetes DaemonSet, Docker containers as first-class
-citizens, and roles beyond "logged in".
-
-Found a bug or a wrong number? [Open an issue](https://github.com/getslowpoke/slowpoke/issues).
-Want to send a patch? Read [CONTRIBUTING.md](CONTRIBUTING.md) first.
-
-## 📄 License
-
-Two licences, because the project has two halves.
-
-- **The agent and the framework packages are [MIT](LICENSE-MIT).** They run on your machines and
-  inside your apps, so they should never need a legal conversation. That covers
-  `cmd/slowpoke-agent`, `internal/agent`, `internal/protocol`, `internal/fingerprint`,
-  `internal/sqlsafe`, `packages/` and `spec/`.
-- **The server and the panel are [AGPL-3.0-or-later](LICENSE).** Run them in your company, change
-  them, keep the changes to yourself. The licence only asks something of whoever offers Slowpoke to
-  other people as a hosted service: then the changes have to be published.
-
-The two halves share no code, and a test keeps it that way.
-
-<sub>"Slowpoke" is a Pokémon trademark. The name works while this is a project on GitHub; it has to be
-checked, and probably changed, before anything is sold under it.</sub>
+<p align="center">
+  <b>Give the next performance sprint a clear starting point.</b><br><br>
+  <a href="https://demo.getslowpoke.com/demo">Try the live demo →</a> ·
+  <a href="#quick-start">Install Slowpoke</a>
+</p>

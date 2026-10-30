@@ -6,11 +6,11 @@ defineEmits(['retry'])
 
 <template>
   <div v-if="loading" class="space-y-4">
-    <div class="h-8 w-48 animate-pulse rounded-lg bg-ink-850" />
+    <div class="h-8 w-48 animate-pulse rounded-lg bg-ink-800" />
     <div class="grid gap-4 md:grid-cols-3">
-      <div v-for="i in 3" :key="i" class="h-36 animate-pulse rounded-2xl bg-ink-900" />
+      <div v-for="i in 3" :key="i" class="h-36 animate-pulse rounded-2xl border border-ink-800 bg-ink-850" />
     </div>
-    <div class="h-64 animate-pulse rounded-2xl bg-ink-900" />
+    <div class="h-64 animate-pulse rounded-2xl border border-ink-800 bg-ink-850" />
   </div>
   <div v-else-if="error" class="card card-pad max-w-lg">
     <div class="text-lg font-medium">{{ t('Something went wrong') }}</div>

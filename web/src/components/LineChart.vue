@@ -27,6 +27,7 @@ const markerPlugin = {
   id: 'markers',
   afterDatasetsDraw(c) {
     const { ctx, chartArea, scales } = c
+    let labelEnd = -Infinity // a label that would sit on the previous one is left out: the line still says it
     for (const m of props.markers) {
       const x = scales.x.getPixelForValue(m.index)
       if (x < chartArea.left || x > chartArea.right) continue
@@ -40,7 +41,11 @@ const markerPlugin = {
       ctx.setLineDash([])
       ctx.fillStyle = m.color || '#ff6f8e'
       ctx.font = '500 10px "Geist Variable", sans-serif'
-      ctx.fillText(m.label, x + 4, chartArea.top + 10)
+      const width = ctx.measureText(m.label || '').width
+      if (m.label && x + 4 > labelEnd + 6 && x + 4 + width <= chartArea.right) {
+        ctx.fillText(m.label, x + 4, chartArea.top + 10)
+        labelEnd = x + 4 + width
+      }
       ctx.restore()
     }
   },

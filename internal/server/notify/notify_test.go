@@ -3,6 +3,7 @@ package notify
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -252,5 +253,98 @@ func TestHumanDuration(t *testing.T) {
 		if got := HumanDuration(in); got != want {
 			t.Errorf("%v: %q", in, got)
 		}
+	}
+}
+
+// slackText flattens a Slack message (attachments and blocks) for assertions, with < and > as they are.
+func slackText(body map[string]any) string {
+	var b strings.Builder
+	enc := json.NewEncoder(&b)
+	enc.SetEscapeHTML(false)
+	_ = enc.Encode(body)
+	return b.String()
+}
+
+func (f *fixture) mission(typ, label string, baseline, current float64, points int, person string, due int64) int64 {
+	var dueAt any
+	if due > 0 {
+		dueAt = due
+	}
+	id, err := f.db.Q().InsertID(f.ctx, `INSERT INTO missions (project_id, type, kind, target, label, baseline, current, points, status, person, opened_at, due_at, checked_at)
+		VALUES (?, ?, 'endpoint', ?, ?, ?, ?, ?, 'open', ?, ?, ?, ?)`, f.project.ID, typ, label, label, baseline, current, points, person, f.now.Unix(), dueAt, f.now.Unix())
+	if err != nil {
+		f.t.Fatal(err)
+	}
+	return id
+}
+
+func TestSlackMessagesAreCardsWithBeforeAndAfter(t *testing.T) {
+	// POST /login-ade on a real installation: it cost 1h 25m a day, the fix brought it to 7m 12s.
+	f := newFixture(t, func(s *project.Settings, url string) {
+		s.Notifications.Channels = []project.Channel{{ID: "team", Type: "slack", URL: url + "/slack-team"}}
+		s.Notifications.Rules = []project.Rule{{Events: []string{"*"}, Channel: "team"}}
+		s.Notifications.People = map[string]project.Person{"mario@acme.example": {SlackUserID: "U42"}}
+	})
+	window := f.project.Settings.Missions.WindowHours / 24 // missions keep seconds per window
+	id := f.mission("mission", "POST /login-ade", 5100*window, 432*window, 85, "mario@acme.example", 0)
+	f.activity("mission_completed", "🧹", "Debt repaid: POST /login-ade", map[string]any{"mission_id": id, "person": "mario@acme.example", "points": 85, "saved_seconds_per_day": 4668})
+	f.run()
+
+	got := f.sink.byPath("/slack-team")
+	if len(got) != 1 {
+		t.Fatalf("slack %+v", got)
+	}
+	body := got[0].body
+	text := slackText(body)
+	for _, want := range []string{
+		"Debt repaid", "POST /login-ade", // what happened, on what
+		"1h 25m", "7m 12s", // before and after, per day
+		"+85", "<@U42>", // the reward and who earned it
+		"https://slowpoke.example.com/projects/shop/missions/", // straight to that mission
+		"https://slowpoke.example.com/slowpoke-logo.png",       // the logo in the footer
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("slack card misses %q:\n%s", want, text)
+		}
+	}
+	if fallback, _ := body["text"].(string); !strings.Contains(fallback, "Debt repaid") {
+		t.Errorf("the notification preview needs plain text, got %q", fallback)
+	}
+	atts, _ := body["attachments"].([]any)
+	if len(atts) != 1 || atts[0].(map[string]any)["color"] != "#7ee0a1" {
+		t.Errorf("a win is green: %+v", atts)
+	}
+}
+
+func TestSlackBossCardSaysTheDeadlineAndIsRed(t *testing.T) {
+	f := newFixture(t, func(s *project.Settings, url string) {
+		s.Notifications.Channels = []project.Channel{{ID: "team", Type: "slack", URL: url + "/slack-team"}}
+		s.Notifications.Rules = []project.Rule{{Events: []string{"boss"}, Channel: "team"}}
+	})
+	due := f.now.Add(9 * time.Hour).Unix()
+	id := f.mission("boss", "GET /contract/{id}/pdf", 138, 138, 25, "", due)
+	f.activity("boss", "👾", "A regression appeared: GET /contract/{id}/pdf", map[string]any{"mission_id": id, "due_at": due, "growth": "x2.1"})
+	f.run()
+	got := f.sink.byPath("/slack-team")
+	if len(got) != 1 {
+		t.Fatalf("slack %+v", got)
+	}
+	text := slackText(got[0].body)
+	if !strings.Contains(text, fmt.Sprintf("<!date^%d^", due)) || !strings.Contains(text, "#ff7a7a") {
+		t.Errorf("a boss is red and says when it escapes, in the reader's own time zone:\n%s", text)
+	}
+}
+
+func TestTheSavedTimeIsSaidOnce(t *testing.T) {
+	// "7m 12s per day of waiting removed per day" was the default for every mission won.
+	f := newFixture(t, func(s *project.Settings, url string) {
+		s.Notifications.Channels = []project.Channel{{ID: "team", Type: "discord", URL: url + "/discord"}}
+		s.Notifications.Rules = []project.Rule{{Events: []string{"*"}, Channel: "team"}}
+	})
+	f.activity("mission_completed", "🧹", "Debt repaid: x", map[string]any{"saved_seconds_per_day": 432})
+	f.run()
+	got := f.sink.byPath("/discord")
+	if len(got) != 1 || strings.Count(got[0].body["content"].(string), "per day") != 1 {
+		t.Fatalf("%+v", got)
 	}
 }

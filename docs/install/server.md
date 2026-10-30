@@ -56,6 +56,23 @@ Variables you can put in `.env`:
 | `SLOWPOKE_PUBLIC_URL` | empty | The address people and agents use, e.g. `https://slowpoke.example.com` |
 | `SLOWPOKE_AGENT_DIR` | `/usr/local/share/slowpoke` | Where the agent binaries served at `/agent/<platform>` live. The image already carries them |
 | `SLOWPOKE_UPDATE_FEED` | the public release list | Asked **only** when somebody presses "Check for a new version" in Settings. Set it empty for a panel that never talks to anything |
+| `SLOWPOKE_SMTP_HOST` | empty | SMTP server for team invitations. Empty: the Team page gives you the invitation link to send yourself |
+| `SLOWPOKE_SMTP_PORT` | `587` | `587` uses STARTTLS when offered, `465` is TLS from the start |
+| `SLOWPOKE_SMTP_USERNAME` / `SLOWPOKE_SMTP_PASSWORD` | empty | SMTP login, sent only over TLS |
+| `SLOWPOKE_SMTP_FROM` | empty | Sender, e.g. `Slowpoke <slowpoke@example.com>`. Required together with the host |
+
+The easiest way is the panel: **Team → Email** has the settings of the common providers (Brevo, Cloudflare,
+Google Workspace, Amazon SES, Resend, Postmark, Mailgun), keeps the password masked and sends a test email to you.
+The variables above, when set, win over the panel.
+
+> Send from a subdomain verified only for Slowpoke (for example `slowpoke@slowpoke.yourcompany.com`): the SPF,
+> DKIM and DMARC records of your company mail stay exactly as they are, and nothing Slowpoke sends can hurt
+> the reputation of the main domain.
+
+Any SMTP provider works. With [Cloudflare Email Service](https://developers.cloudflare.com/email-service/api/send-emails/smtp/):
+onboard your domain under Email Service > Email Sending, create an API token with the "Email Sending: Edit"
+permission, then set `SLOWPOKE_SMTP_HOST=smtp.mx.cloudflare.net`, `SLOWPOKE_SMTP_PORT=465`,
+`SLOWPOKE_SMTP_USERNAME=api_token`, the token as `SLOWPOKE_SMTP_PASSWORD`, and a sender on the onboarded domain.
 
 Migrations run automatically at every start.
 
@@ -111,8 +128,18 @@ With SQLite, add `StateDirectory=slowpoke` and use `SLOWPOKE_DATABASE_URL=sqlite
 
 ## First user
 
-The first visit to the UI asks for a name, an email and a password of at least 10 characters. Setup is only possible
-while no user exists. From the command line instead:
+The first visit to the UI asks for the **setup code**, then a name, an email and a password of at least 10 characters.
+Setup is only possible while no user exists. The code is what keeps the panel from belonging to whoever reaches it
+first: the installer prints it at the end (with a link that fills it in), the server logs it at every start while
+nobody has set it up (`"setup_code"`), and this prints it again:
+
+```sh
+docker compose exec server slowpoke-server setup-code   # or just: slowpoke-server setup-code
+```
+
+It is used once and forgotten. Ten wrong codes from one address block it for 15 minutes, like wrong passwords.
+
+From the command line instead, with no code needed (whoever runs it already controls the server):
 
 ```sh
 docker compose exec server slowpoke-server create-user -email you@example.com -name "Your Name" -password '…'

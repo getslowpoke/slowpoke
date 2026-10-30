@@ -2,18 +2,19 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, latency, compact, clock, day, duration, dateTime } from '../lib/format.js'
 import { reasonInWords } from '../lib/exclusions.js'
 import State from '../components/State.vue'
 import LineChart from '../components/LineChart.vue'
 import ExcludeDialog from '../components/ExcludeDialog.vue'
+import MissionButton from '../components/MissionButton.vue'
 
 const props = defineProps({ project: Object })
 const route = useRoute()
 const query = computed(() => new URLSearchParams({ source: route.query.source || '', endpoint: route.query.endpoint || '' }).toString())
-const { data, error, loading, reload } = useLoad(() => api.get(`/api/projects/${props.project.slug}/endpoints?${query.value}`), { watchSources: [query] })
+const { data, error, loading, reload } = useGet(() => `/api/projects/${props.project.slug}/endpoints?${query.value}`, { watchSources: [query] })
 
 const excluding = ref(false)
 const restoring = ref(false)
@@ -48,8 +49,11 @@ const chart = computed(() => {
       <span class="chip font-mono !text-sm">{{ data.endpoint.split(' ')[0] }}</span>
       <h1 class="font-mono text-xl text-ink-100">{{ data.endpoint.split(' ').slice(1).join(' ') }}</h1>
       <span class="chip">{{ data.source }}</span>
-      <span v-if="data.exclusion" class="chip !border-ink-600 !text-ink-300">🙈 {{ t('left out') }}</span>
-      <button v-else class="btn-ghost ml-auto !py-1 text-xs" @click="excluding = true">🙈 {{ t('Leave it out of the score') }}</button>
+      <div class="ml-auto flex flex-wrap items-center gap-2">
+        <span v-if="data.exclusion" class="chip !border-ink-600 !text-ink-300">🙈 {{ t('left out') }}</span>
+        <button v-else class="btn-ghost !py-1 text-xs" @click="excluding = true">🙈 {{ t('Leave it out of the score') }}</button>
+        <MissionButton :slug="project.slug" kind="endpoint" :target="`${data.source} ${data.endpoint}`" :missions="data.missions" />
+      </div>
     </div>
     <div v-if="data.exclusion" class="card mt-4 flex flex-wrap items-center justify-between gap-3 border-ink-700 p-4 text-sm">
       <div>

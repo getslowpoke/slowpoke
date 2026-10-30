@@ -50,6 +50,35 @@ func (s *Server) handleMission(w http.ResponseWriter, r *http.Request, p project
 	writeJSON(w, http.StatusOK, map[string]any{"context": c, "markdown": c.Markdown(), "integrations": integrations})
 }
 
+// handleOpenMission opens a mission by hand from a slow thing, or leads to the one already open.
+func (s *Server) handleOpenMission(w http.ResponseWriter, r *http.Request, p project.Project) {
+	var body struct {
+		Kind   string `json:"kind"`
+		Target string `json:"target"`
+	}
+	if err := decode(r, &body); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	id, created, err := s.Engine.OpenMission(r.Context(), p, body.Kind, body.Target)
+	switch {
+	case errors.Is(err, game.ErrUnknownKind):
+		writeError(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	case errors.Is(err, game.ErrUnknownTarget):
+		writeError(w, http.StatusNotFound, err.Error())
+		return
+	case err != nil:
+		serverError(w, err)
+		return
+	}
+	status := http.StatusOK
+	if created {
+		status = http.StatusCreated
+	}
+	writeJSON(w, status, map[string]any{"id": id, "created": created})
+}
+
 func (s *Server) handleCreateTask(w http.ResponseWriter, r *http.Request, p project.Project) {
 	var body struct {
 		Integration string `json:"integration"`

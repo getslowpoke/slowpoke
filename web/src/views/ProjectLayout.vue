@@ -5,6 +5,11 @@ import { api } from '../lib/api.js'
 import { session } from '../lib/session.js'
 import { t, locale, setLocale } from '../lib/i18n.js'
 import { setProjectName } from '../lib/pageTitle.js'
+import { pageCache } from '../lib/pageCache.js'
+import { pending } from '../lib/useLoad.js'
+import State from '../components/State.vue'
+import WelcomeTour from '../components/WelcomeTour.vue'
+import { welcome, tourOpen } from '../lib/welcome.js'
 
 const props = defineProps({ slug: String })
 const route = useRoute()
@@ -12,14 +17,41 @@ const router = useRouter()
 const project = ref(null)
 const projects = ref([])
 const open = ref(false)
+const failed = ref(null)
 
+// The project seen last time opens the page at once; the fresh one replaces it when it arrives.
 async function load() {
-  const [p, list] = await Promise.all([api.get(`/api/projects/${props.slug}`), api.get('/api/projects')])
-  project.value = p.project
-  projects.value = list.projects
-  setProjectName(project.value?.name) // the tab can only say whose page this is once we know
+  const key = `layout:${props.slug}`
+  const cached = pageCache.recall(key)
+  if (cached) apply(cached)
+  else if (project.value?.slug !== props.slug) project.value = null
+  let p, list
+  pending.value++
+  try {
+    ;[p, list] = await Promise.all([api.get(`/api/projects/${props.slug}`), api.get('/api/projects')])
+    failed.value = null
+  } catch (e) {
+    failed.value = e
+    return
+  } finally {
+    pending.value--
+  }
+  const fresh = { project: p.project, projects: list.projects }
+  pageCache.remember(key, fresh)
+  apply(fresh)
+}
+function apply({ project: p, projects: list }) {
+  project.value = p
+  projects.value = list
+  setProjectName(p?.name) // the tab can only say whose page this is once we know
 }
 watch(() => props.slug, load, { immediate: true })
+// The first time this browser sees a project, the tour explains what it is looking at.
+if (welcome.due()) tourOpen.value = true
+function closeTour() {
+  tourOpen.value = false
+  welcome.done()
+}
 provide('project', project)
 provide('reloadProject', load)
 
@@ -86,6 +118,12 @@ async function logout() {
           <router-link :to="`/tv/${slug}`" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-ink-400 hover:bg-ink-900 hover:text-ink-200">
             <span class="w-4 text-center">▣</span>{{ t('TV mode') }}
           </router-link>
+          <router-link to="/team" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-ink-400 hover:bg-ink-900 hover:text-ink-200">
+            <span class="w-4 text-center">☺</span>{{ t('Team') }}
+          </router-link>
+          <button class="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-ink-400 hover:bg-ink-900 hover:text-ink-200" @click="tourOpen = true; open = false">
+            <span class="w-4 text-center">✦</span>{{ t('Take the tour') }}
+          </button>
         </div>
         <div class="mt-6 flex items-center justify-between px-3 pb-4 text-xs text-ink-500 lg:absolute lg:bottom-0 lg:left-0 lg:right-0 lg:px-6">
           <button class="hover:text-ink-300" @click="setLocale(locale === 'it' ? 'en' : 'it')">{{ locale === 'it' ? 'English' : 'Italiano' }}</button>
@@ -94,12 +132,15 @@ async function logout() {
       </div>
     </aside>
 
-    <main class="min-w-0 px-4 py-6 sm:px-8 lg:py-8">
-      <router-view v-if="project" v-slot="{ Component, route: r }">
+    <div class="loading-bar" :class="{ on: pending > 0 }" aria-hidden="true" />
+    <main class="min-w-0 px-4 py-6 sm:px-8 lg:py-8" :aria-busy="pending > 0">
+      <State v-if="!project" :loading="!failed" :error="failed" @retry="load" />
+      <router-view v-else v-slot="{ Component, route: r }">
         <div :key="r.fullPath" class="page-in">
           <component :is="Component" :project="project" />
         </div>
       </router-view>
     </main>
+    <WelcomeTour v-if="tourOpen" :slug="slug" @close="closeTour" />
   </div>
 </template>

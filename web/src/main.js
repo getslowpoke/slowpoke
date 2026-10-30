@@ -1,14 +1,18 @@
-import { createApp } from 'vue'
+import { createApp, watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import './style.css'
 import { session, refreshSession } from './lib/session.js'
 import { applyTitle } from './lib/pageTitle.js'
+import { pageCache } from './lib/pageCache.js'
 
 const routes = [
   { path: '/setup', component: () => import('./views/Setup.vue'), meta: { public: true } },
   { path: '/login', component: () => import('./views/Login.vue'), meta: { public: true } },
+  { path: '/invite/:token', component: () => import('./views/Invite.vue'), props: true, meta: { public: true } },
   { path: '/', component: () => import('./views/Projects.vue') },
+  { path: '/team', component: () => import('./views/Team.vue') },
+  { path: '/email', component: () => import('./views/Mail.vue') },
   { path: '/tv/:slug', component: () => import('./views/Tv.vue'), props: true },
   { path: '/projects/:slug/report', component: () => import('./views/DebtReport.vue'), props: true },
   {
@@ -50,6 +54,9 @@ router.beforeEach(async (to) => {
 
 // The tab says where you are: with four of them open, the title is the only label there is.
 router.afterEach((to) => applyTitle(to.path))
+
+// Pages remembered for one user are never shown to the next one on the same tab.
+watch(() => session.user?.id, (now, before) => before !== undefined && now !== before && pageCache.clear())
 
 window.addEventListener('slowpoke:unauthorized', () => {
   session.user = null

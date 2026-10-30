@@ -101,7 +101,15 @@ func TestSecretsAreMaskedAndRestored(t *testing.T) {
 	if stored.Integrations.Tasks[0].Token != "ghp_real" {
 		t.Fatal("masking must not change the stored settings")
 	}
+	// A webhook URL is a password: whoever has it posts in the channel. The host stays, so the
+	// page still says where it goes.
+	if u := masked.Notifications.Channels[0].URL; u != "https://hooks.slack.com/"+SecretMask {
+		t.Fatalf("webhook URL shown as %q", u)
+	}
 	masked.RestoreSecrets(stored)
+	if masked.Notifications.Channels[0].URL != "https://hooks.slack.com/x" {
+		t.Fatalf("webhook URL not restored: %q", masked.Notifications.Channels[0].URL)
+	}
 	if masked.Integrations.Tasks[0].Token != "ghp_real" || masked.Notifications.Channels[0].BotToken != "xoxb-real" {
 		t.Fatalf("%+v", masked)
 	}

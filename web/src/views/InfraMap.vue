@@ -1,7 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, pct, bytes, ago } from '../lib/format.js'
 import Sparkline from '../components/Sparkline.vue'
@@ -10,7 +10,7 @@ import PageHeader from '../components/PageHeader.vue'
 import Empty from '../components/Empty.vue'
 
 const props = defineProps({ project: Object })
-const { data, error, loading, reload } = useLoad(() => api.get(`/api/projects/${props.project.slug}/topology`), { every: 30000 })
+const { data, error, loading, reload } = useGet(() => `/api/projects/${props.project.slug}/topology`, { every: 30000 })
 const hovered = ref(null)
 const installFor = ref(null)
 const selected = ref(null)

@@ -250,6 +250,11 @@ func (e *Engine) closeExpired(ctx context.Context, p project.Project, now time.T
 		return err
 	}
 	for _, m := range open {
+		if m.Type == "boss" && m.DueAt.Valid && now.Unix() < m.DueAt.Int64 && m.DueAt.Int64-now.Unix() <= int64(bossReminder/time.Second) {
+			if err := e.remindBoss(ctx, p, m.ID, m.Label, m.Person, m.DueAt.Int64); err != nil {
+				return err
+			}
+		}
 		var status, icon, title string
 		switch {
 		case m.Type == "boss" && m.DueAt.Valid && now.Unix() >= m.DueAt.Int64:
@@ -441,4 +446,22 @@ func (e *Engine) repaidPerDay(ctx context.Context, p project.Project) (float64, 
 	var repaid sql.NullFloat64
 	err := e.DB.Q().Row(ctx, `SELECT SUM(baseline - COALESCE(current, 0)) FROM missions WHERE project_id = ? AND type = 'mission' AND status = 'completed' AND verdict <> 'relapsed'`, p.ID).Scan(&repaid)
 	return perDay(repaid.Float64, windowOf(p)), err
+}
+
+// bossReminder is how long before its deadline a boss is announced again: enough to ship a fix.
+const bossReminder = 2 * time.Hour
+
+// remindBoss announces once that a boss is about to escape.
+func (e *Engine) remindBoss(ctx context.Context, p project.Project, id int64, label, person string, due int64) error {
+	return e.DB.Tx(ctx, func(q store.Q) error {
+		res, err := q.Exec(ctx, "INSERT INTO app_settings (key, value) VALUES (?, '1') ON CONFLICT (key) DO NOTHING", fmt.Sprintf("boss_deadline:%d", id))
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return nil
+		}
+		return e.activity(ctx, q, p.ID, "boss_deadline", "⏰", "Escapes in 2 hours: "+label,
+			map[string]any{"mission_id": id, "person": person, "due_at": due})
+	})
 }

@@ -276,7 +276,7 @@ test('a deploy, a delivery band and a measure of your own all have words', () =>
 test('a row of the speed index says what fixing it would give back', () => {
   const row = { available: true, metric: 'http_p95', value: 1.2, good: 0.3, bad: 1.5, weight: 20, lost: 4.23 }
   assert.strictEqual(pointsToGain(row), '+4.2 points')
-  assert.strictEqual(componentNow(row), 'today 1.2 s · full marks up to 300 ms')
+  assert.strictEqual(componentNow(row), 'last 24 h 1.2 s · full marks up to 300 ms')
   assert.strictEqual(pointsToGain({ ...row, lost: 0 }), 'full marks')
   assert.strictEqual(pointsToGain({ ...row, available: false }), '')
   assert.match(componentNow({ ...row, available: false }), /nobody is measuring/)

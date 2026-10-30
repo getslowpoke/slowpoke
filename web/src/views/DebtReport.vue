@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, duration, dateTime, day } from '../lib/format.js'
 import State from '../components/State.vue'
@@ -11,7 +11,7 @@ import Severity from '../components/Severity.vue'
 import { kindWords, reasonInWords } from '../lib/exclusions.js'
 
 const props = defineProps({ slug: String })
-const { data, error, loading, reload } = useLoad(() => api.get(`/api/projects/${props.slug}/debt-report`))
+const { data, error, loading, reload } = useGet(() => `/api/projects/${props.slug}/debt-report`)
 const trend = computed(() => {
   const d = data.value?.debt
   if (!d?.previous_seconds_per_day) return null

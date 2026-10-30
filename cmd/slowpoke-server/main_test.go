@@ -21,6 +21,12 @@ func TestBareInvocationDoesNotStartAServer(t *testing.T) {
 		{[]string{"create-token", "-project", "shop"}, "create-token", []string{"-project", "shop"}},
 		// Flags without a verb still mean serve: that is how the unit files are written.
 		{[]string{"-addr", ":9000"}, "serve", []string{"-addr", ":9000"}},
+		// 2026-10-01 on the demo machine: "-version" to check a new binary started a server on
+		// :8080 with a database in /root. Asking what it is never starts it.
+		{[]string{"-version"}, "version", []string{}},
+		{[]string{"--version"}, "version", []string{}},
+		{[]string{"-h"}, "", nil},
+		{[]string{"--help"}, "", nil},
 	}
 	for _, c := range cases {
 		command, rest := commandFrom(c.args)

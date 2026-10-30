@@ -53,9 +53,13 @@ type Message struct {
 	Saved   string
 	URL     string
 	Data    map[string]any
+	// The mission behind the event, when there is one: Slack cards show its before and after.
+	Mission *missionInfo
+	// A template the team wrote for this event: Slack then shows it as it is.
+	Custom bool
 }
 
-const DefaultTemplate = "{{.Icon}} *{{.Project}}* · {{.Title}}{{if .Points}} · +{{.Points}} pts{{end}}{{if .Saved}} · {{.Saved}} of waiting removed per day{{end}}{{if .Mention}} · {{.Mention}}{{end}}{{if .URL}}\n{{.URL}}{{end}}"
+const DefaultTemplate = "{{.Icon}} *{{.Project}}* · {{.Title}}{{if .Points}} · +{{.Points}} pts{{end}}{{if .Saved}} · {{.Saved}} less waiting{{end}}{{if .Mention}} · {{.Mention}}{{end}}{{if .URL}}\n{{.URL}}{{end}}"
 
 func HumanDuration(seconds float64) string {
 	s := int64(math.Round(seconds))
@@ -172,6 +176,16 @@ func (n *Notifier) ProcessProject(ctx context.Context, p project.Project) error 
 		var data map[string]any
 		_ = json.Unmarshal([]byte(a.raw), &data)
 		msg := Message{Event: eventOf(a.kind, data), Project: p.Name, Icon: a.icon, Title: a.title, URL: n.pageFor(p, a.kind), Data: data}
+		if id, ok := data["mission_id"].(float64); ok && id > 0 {
+			mi, err := n.mission(ctx, p, int64(id))
+			if err != nil {
+				return err
+			}
+			msg.Mission = mi
+			if n.PublicURL != "" {
+				msg.URL = fmt.Sprintf("%s/projects/%s/missions/%d", n.PublicURL, p.Slug, int64(id))
+			}
+		}
 		msg.Person, _ = data["person"].(string)
 		if pts, ok := data["points"].(float64); ok {
 			msg.Points = int(pts)
@@ -218,6 +232,7 @@ func (n *Notifier) deliver(ctx context.Context, p project.Project, msg Message) 
 		if ch.Type == "slack" && hasPerson && person.SlackUserID != "" {
 			m.Mention = "<@" + person.SlackUserID + ">"
 		}
+		m.Custom = strings.TrimSpace(settings.Templates[msg.Event]) != ""
 		text, err := render(settings.Templates[msg.Event], m)
 		if err != nil {
 			return err
@@ -226,7 +241,7 @@ func (n *Notifier) deliver(ctx context.Context, p project.Project, msg Message) 
 			errs = append(errs, fmt.Errorf("%s: %w", ch.ID, err))
 		}
 		if rule.DirectMessage && hasPerson {
-			if err := n.sendDirect(ctx, ch, person, text); err != nil {
+			if err := n.sendDirect(ctx, ch, person, m, text); err != nil {
 				errs = append(errs, fmt.Errorf("%s dm: %w", ch.ID, err))
 			}
 		}
@@ -285,7 +300,7 @@ func (n *Notifier) sendChannel(ctx context.Context, ch project.Channel, m Messag
 		if ch.URL == "" {
 			return nil
 		}
-		return n.post(ctx, ch.URL, map[string]string{"text": text}, nil)
+		return n.post(ctx, ch.URL, n.slackCard(m, text, m.Custom), nil)
 	case "discord":
 		return n.post(ctx, ch.URL, map[string]string{"content": text}, nil)
 	case "teams":
@@ -302,10 +317,12 @@ func (n *Notifier) sendChannel(ctx context.Context, ch project.Channel, m Messag
 	return fmt.Errorf("unknown channel type %q", ch.Type)
 }
 
-func (n *Notifier) sendDirect(ctx context.Context, ch project.Channel, person project.Person, text string) error {
+func (n *Notifier) sendDirect(ctx context.Context, ch project.Channel, person project.Person, m Message, text string) error {
 	switch {
 	case ch.Type == "slack" && ch.BotToken != "" && person.SlackUserID != "":
-		return n.post(ctx, n.SlackAPI+"/chat.postMessage", map[string]string{"channel": person.SlackUserID, "text": text},
+		card := n.slackCard(m, text, m.Custom)
+		card["channel"] = person.SlackUserID
+		return n.post(ctx, n.SlackAPI+"/chat.postMessage", card,
 			map[string]string{"Authorization": "Bearer " + ch.BotToken})
 	case ch.Type == "telegram" && person.TelegramChatID != "":
 		return n.post(ctx, fmt.Sprintf("%s/bot%s/sendMessage", n.TelegramAPI, ch.BotToken), map[string]string{"chat_id": person.TelegramChatID, "text": text}, nil)

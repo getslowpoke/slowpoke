@@ -8,6 +8,7 @@ import CopyButton from '../components/CopyButton.vue'
 import TimezoneSelect from '../components/TimezoneSelect.vue'
 import { busyInWords, dayName } from '../lib/busyHours.js'
 import ExclusionsPanel from '../components/ExclusionsPanel.vue'
+import SlackGuide from '../components/SlackGuide.vue'
 import { ago } from '../lib/format.js'
 import {
   applyPreset, bossesInWords, channelInWords, channelNames, componentInWords, currentPreset,
@@ -115,6 +116,16 @@ function addComponent() {
 function addChannel() {
   s.value.notifications.channels.push({ id: `channel-${s.value.notifications.channels.length + 1}`, name: '', type: 'slack', url: '', bot_token: '', chat_id: '' })
 }
+// From the Slack guide: the channel and a rule with the moments worth a message, ready to paste into.
+function addSlackChannel() {
+  const n = s.value.notifications
+  const id = n.channels.some((c) => c.id === 'slack') ? `slack-${n.channels.length + 1}` : 'slack'
+  n.channels.push({ id, name: '#slowpoke', type: 'slack', url: '', bot_token: '', chat_id: '' })
+  n.rules.push({ channel: id, direct_message: false, events: ['mission_claimed', 'mission_shipped', 'mission_completed', 'mission_confirmed',
+    'mission_relapsed', 'boss', 'boss_deadline', 'boss_defeated', 'boss_escaped', 'deploy_worse', 'leaderboard', 'badge', 'level_up', 'debt_goal'] })
+}
+// The guide stays open until a Slack channel exists: after that it is one click away.
+const hasSlack = computed(() => (s.value?.notifications?.channels || []).some((c) => c.type === 'slack' && c.url))
 const accessTokens = ref([])
 const newSecret = ref(null)
 const personalName = ref('')
@@ -468,6 +479,7 @@ const templateEvents = computed(() => meta.value?.notification_events || [])
 
     <!-- Notifications -->
     <div v-if="tab === 'notifications'" class="space-y-4">
+      <SlackGuide :open="!hasSlack" @add="addSlackChannel" />
       <section class="card card-pad">
         <div class="flex items-center justify-between"><div class="label">{{ t('Channels') }}</div><button class="btn-ghost !py-1 text-xs" @click="addChannel">+ {{ t('Add') }}</button></div>
         <div class="mt-3 space-y-2">

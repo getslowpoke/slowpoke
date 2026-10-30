@@ -18,6 +18,7 @@ import (
 	"github.com/getslowpoke/slowpoke/internal/server/auth"
 	"github.com/getslowpoke/slowpoke/internal/server/game"
 	"github.com/getslowpoke/slowpoke/internal/server/ingest"
+	"github.com/getslowpoke/slowpoke/internal/server/mail"
 	"github.com/getslowpoke/slowpoke/internal/server/mcp"
 	"github.com/getslowpoke/slowpoke/internal/server/metrics"
 	"github.com/getslowpoke/slowpoke/internal/server/notify"
@@ -46,10 +47,18 @@ type Server struct {
 	// (SLOWPOKE_LOCALE). Vuota: decide il browser.
 	Locale string
 	// A public demo (SLOWPOKE_DEMO_EMAIL / SLOWPOKE_DEMO_PASSWORD): the login page shows the
-	// credentials and GET /demo logs straight in, into DemoProject. Empty on any real server.
+	// credentials and GET /demo logs straight in, into DemoProject (a comma list: GET /demo?project=
+	// picks one). Empty on any real server.
 	DemoEmail, DemoPassword, DemoProject string
 	Notifier *notify.Notifier
 	Static   fs.FS
+
+	// Mailer sends team invitations (SLOWPOKE_SMTP_*). Nil or not configured: the panel shows
+	// the invitation link to pass along by hand.
+	Mailer mail.Sender
+	// panelSender turns the account saved in the panel into a sender; tests capture it.
+	panelSender func(mail.Account) mail.Sender
+
 	// PublicURL is used in links (notifications, tasks); empty = the request host.
 	PublicURL string
 	// TrustedProxies may set X-Forwarded-For (reverse proxy in front of the server).
@@ -123,6 +132,21 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/updates", s.authed(s.handleUpdates))
 	mux.Handle("POST /api/updates/check", s.authed(s.handleUpdateCheck))
 
+	// The team: everybody logged in is an admin, so everybody can invite and remove.
+	mux.Handle("GET /api/team", s.authed(s.handleTeam))
+	mux.Handle("POST /api/team/invites", s.teamChange(s.handleCreateInvite))
+	mux.Handle("POST /api/team/invites/{id}/resend", s.teamChange(s.handleResendInvite))
+	mux.Handle("DELETE /api/team/invites/{id}", s.teamChange(s.handleRevokeInvite))
+	mux.Handle("DELETE /api/team/users/{id}", s.teamChange(s.handleDeleteUser))
+	// The email account invitations leave from, for installations that do not set SLOWPOKE_SMTP_*.
+	mux.Handle("GET /api/mail", s.authed(s.handleGetMail))
+	mux.Handle("PUT /api/mail", s.teamChange(s.handlePutMail))
+	mux.Handle("DELETE /api/mail", s.teamChange(s.handleDeleteMail))
+	mux.Handle("POST /api/mail/test", s.teamChange(s.handleTestMail))
+	// The invitation link: public, the token is the key.
+	mux.HandleFunc("GET /api/invites/{token}", s.handleInvite)
+	mux.HandleFunc("POST /api/invites/{token}/accept", s.handleAcceptInvite)
+
 	mux.Handle("GET /api/projects", s.authed(s.handleListProjects))
 	mux.Handle("POST /api/projects", s.authed(s.handleCreateProject))
 	mux.Handle("GET /api/projects/{slug}", s.authed(s.withProject(s.handleGetProject)))
@@ -134,6 +158,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/projects/{slug}/queries/{hash}", s.authed(s.withProject(s.handleQuery)))
 	mux.Handle("GET /api/projects/{slug}/endpoints", s.authed(s.withProject(s.handleEndpoint)))
 	mux.Handle("GET /api/projects/{slug}/missions", s.authed(s.withProject(s.handleMissions)))
+	mux.Handle("POST /api/projects/{slug}/missions", s.authed(s.withProject(s.handleOpenMission)))
 	mux.Handle("GET /api/projects/{slug}/busy-hours", s.authed(s.withProject(s.handleBusyHours)))
 	mux.Handle("GET /api/projects/{slug}/missions/{id}", s.authed(s.withProject(s.handleMission)))
 	mux.Handle("PATCH /api/projects/{slug}/missions/{id}", s.authed(s.withProject(s.handleUpdateMission)))
@@ -163,6 +188,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /api/projects/{slug}/tokens", s.authed(s.handleCreateToken))
 	mux.Handle("DELETE /api/projects/{slug}/tokens/{id}", s.authed(s.withProject(s.handleRevokeToken)))
 	mux.Handle("GET /api/projects/{slug}/exclusions", s.authed(s.withProject(s.handleExclusions)))
+	mux.Handle("GET /api/projects/{slug}/exclusions/related", s.authed(s.withProject(s.handleRelatedExclusions)))
 	mux.Handle("POST /api/projects/{slug}/exclusions", s.authed(s.withProject(s.handleCreateExclusion)))
 	mux.Handle("DELETE /api/projects/{slug}/exclusions/{id}", s.authed(s.withProject(s.handleDeleteExclusion)))
 	mux.Handle("GET /api/projects/{slug}/debt-report", s.authed(s.withProject(s.handleDebtReport)))

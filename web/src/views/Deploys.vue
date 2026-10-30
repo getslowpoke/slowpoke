@@ -1,6 +1,6 @@
 <script setup>
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, latency, pct, dateTime, duration } from '../lib/format.js'
 import State from '../components/State.vue'
@@ -10,7 +10,7 @@ import CopyButton from '../components/CopyButton.vue'
 import { deliveryWords, verdictWords } from '../lib/settingsWords.js'
 
 const props = defineProps({ project: Object })
-const { data, error, loading, reload } = useLoad(() => api.get(`/api/projects/${props.project.slug}/deploys`))
+const { data, error, loading, reload } = useGet(() => `/api/projects/${props.project.slug}/deploys`)
 const verdict = {
   better: { icon: '✅', cls: 'text-good border-good/30 bg-good/10' },
   worse: { icon: '🐢', cls: 'text-bad border-bad/30 bg-bad/10' },

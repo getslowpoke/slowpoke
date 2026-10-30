@@ -5,9 +5,12 @@ package game
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/getslowpoke/slowpoke/internal/server/metrics"
@@ -41,6 +44,7 @@ func (e *Engine) EvaluateProject(ctx context.Context, p project.Project) error {
 		fn   func(context.Context, project.Project) error
 	}{
 		{"days", e.evaluateDays},
+		{"window", e.evaluateWindow},
 		{"missions", e.evaluateMissions},
 		{"deploys", e.evaluateDeploys},
 		{"commands", e.evaluateCommandOverlaps},
@@ -105,9 +109,44 @@ func (e *Engine) award(ctx context.Context, q store.Q, projectID int64, points i
 	if points == 0 {
 		return nil
 	}
+	var season int64
+	var before int64
+	if person != "" && points > 0 {
+		var tz string
+		_ = q.Row(ctx, "SELECT timezone FROM projects WHERE id = ?", projectID).Scan(&tz)
+		loc, err := time.LoadLocation(tz)
+		if err != nil {
+			loc = time.UTC
+		}
+		now := e.Now().In(loc)
+		season = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, loc).Unix()
+		if err := q.Row(ctx, "SELECT COALESCE(SUM(points), 0) FROM point_entries WHERE project_id = ? AND person = ? AND created_at >= ?", projectID, person, season).Scan(&before); err != nil {
+			return err
+		}
+	}
 	_, err := q.Exec(ctx, `INSERT INTO point_entries (project_id, points, reason, person, subject_type, subject_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		projectID, points, reason, person, subjectType, subjectID, e.Now().Unix())
-	return err
+	if err != nil || person == "" || points <= 0 {
+		return err
+	}
+	return e.overtake(ctx, q, projectID, person, season, before, before+int64(points))
+}
+
+// overtake announces passing someone in the month's points: the best-placed person passed is named.
+func (e *Engine) overtake(ctx context.Context, q store.Q, projectID int64, person string, season, before, after int64) error {
+	var other string
+	var theirs int64
+	err := q.Row(ctx, `SELECT person, SUM(points) FROM point_entries WHERE project_id = ? AND person <> '' AND person <> ? AND created_at >= ?
+		GROUP BY person HAVING SUM(points) >= ? AND SUM(points) < ? ORDER BY SUM(points) DESC LIMIT 1`, projectID, person, season, max(before, 1), after).Scan(&other, &theirs)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	short := func(p string) string { return strings.SplitN(p, "@", 2)[0] }
+	return e.activity(ctx, q, projectID, "leaderboard", "🏁", fmt.Sprintf("%s overtakes %s: %d to %d points this month", short(person), short(other), after, theirs),
+		map[string]any{"person": person, "overtaken": other, "total": after, "their_total": theirs})
 }
 
 func (e *Engine) activity(ctx context.Context, q store.Q, projectID int64, kind, icon, title string, data map[string]any) error {

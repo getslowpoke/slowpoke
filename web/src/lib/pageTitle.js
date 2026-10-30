@@ -22,6 +22,9 @@ export const pageNames = {
   login: 'Log in',
   setup: 'Welcome',
   projects: 'Projects',
+  team: 'Team',
+  email: 'Email',
+  invite: 'Invitation',
 }
 
 /** The key of the page a path leads to, from the segment that names it. */

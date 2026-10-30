@@ -566,6 +566,26 @@ var migrations = []string{
 	DROP INDEX exclusions_endpoint;
 	CREATE UNIQUE INDEX exclusions_target ON exclusions (project_id, kind, target);
 	ALTER TABLE missions ADD COLUMN quiet_until BIGINT;`,
+	// A person joins the team through a link sent by email: only the hash of the link is kept,
+	// one pending invitation per address.
+	`CREATE TABLE invites (
+		id {id},
+		email TEXT NOT NULL UNIQUE,
+		token_hash TEXT NOT NULL UNIQUE,
+		invited_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+		created_at BIGINT NOT NULL,
+		expires_at BIGINT NOT NULL
+	);`,
+	// The speed index people see: the last 24 hours, recomputed every minute. The calendar day
+	// alone reads 100 at night, when nobody is using the app.
+	`CREATE TABLE IF NOT EXISTS score_window (
+		project_id BIGINT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+		score {real},
+		partial {bool} NOT NULL DEFAULT FALSE,
+		hours {real} NOT NULL DEFAULT 0,
+		components TEXT NOT NULL DEFAULT '[]',
+		updated_at BIGINT NOT NULL
+	);`,
 }
 
 func (d *DB) Migrate(ctx context.Context) error {

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, latency, compact, clock, day } from '../lib/format.js'
 import State from '../components/State.vue'
@@ -13,8 +13,8 @@ import Empty from '../components/Empty.vue'
 
 const props = defineProps({ project: Object })
 const windowSel = ref('24h')
-const { data, error, loading, reload } = useLoad(() => api.get(`/api/projects/${props.project.slug}/metrics?window=${windowSel.value}`), { watchSources: [windowSel] })
-const heat = useLoad(() => api.get(`/api/projects/${props.project.slug}/heatmap`))
+const { data, error, loading, reload } = useGet(() => `/api/projects/${props.project.slug}/metrics?window=${windowSel.value}`, { watchSources: [windowSel] })
+const heat = useGet(() => `/api/projects/${props.project.slug}/heatmap`)
 
 const weekdays = computed(() => {
   const base = new Date(Date.UTC(2024, 0, 1)) // a Monday

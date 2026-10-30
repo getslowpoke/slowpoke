@@ -39,9 +39,7 @@ func (s *Server) handleListProjects(w http.ResponseWriter, r *http.Request, _ au
 		p.Token = ""
 		p.Settings = p.Settings.Masked()
 		it := item{Project: p}
-		var score *float64
-		_ = s.DB.Q().Row(r.Context(), "SELECT score FROM score_days WHERE project_id = ? ORDER BY day DESC LIMIT 1", p.ID).Scan(&score)
-		if score != nil {
+		if score := game.CurrentScore(r.Context(), s.DB.Q(), p.ID); score != nil {
 			it.Score = score
 			it.Level = p.Settings.LevelFor(*score)
 		}

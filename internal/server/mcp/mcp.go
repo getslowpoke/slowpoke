@@ -270,8 +270,7 @@ func (s *server) callTool(ctx context.Context, p project.Project, t tokens.Token
 	now := time.Now()
 	switch name {
 	case "project_overview":
-		var score *float64
-		_ = s.db.Q().Row(ctx, "SELECT score FROM score_days WHERE project_id = ? ORDER BY day DESC LIMIT 1", p.ID).Scan(&score)
+		score := game.CurrentScore(ctx, s.db.Q(), p.ID)
 		engine := game.New(s.db)
 		debt, err := engine.Debt(ctx, p)
 		if err != nil {
@@ -330,11 +329,12 @@ func (s *server) callTool(ctx context.Context, p project.Project, t tokens.Token
 			items = append(items, it)
 		}
 		rows.Close()
+		queries := missionctx.NewQueries(s.db, p, now)
 		for i := range items {
 			if items[i].effort == "" {
 				var ds []doctor.Diagnosis
 				if items[i].kind == "query" {
-					if q, err := missionctx.LoadQuery(ctx, s.db, p, items[i].target, now); err == nil {
+					if q, err := queries.Load(ctx, items[i].target); err == nil {
 						ds = q.Diagnoses
 					}
 				}

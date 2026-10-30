@@ -73,6 +73,30 @@ func Key(kind, target string) string {
 	return strings.ToUpper(method) + " /" + strings.Join(parts, "/")
 }
 
+// SamePath tells whether two endpoints are the same path under different methods: a team that
+// leaves out "GET /export/" because it waits on somebody else usually means its POST too.
+func SamePath(a, b string) bool {
+	ka, kb := Key(KindEndpoint, a), Key(KindEndpoint, b)
+	ma, pa, okA := strings.Cut(ka, " ")
+	mb, pb, okB := strings.Cut(kb, " ")
+	return okA && okB && pa == pb && ma != mb
+}
+
+// outboundCalls are the PHP functions where a request waits on another service: the deepest
+// frame of a php-fpm stall spent there is time the team's own code does not decide.
+var outboundCalls = []string{"curl_exec()", "curl_multi_exec()", "curl_multi_select()",
+	"SoapClient->__doRequest()", "SoapClient->__call()", "stream_socket_client()", "fsockopen()"}
+
+// OutboundFrame tells whether a PHP frame is a wait on another service.
+func OutboundFrame(frame string) bool {
+	for _, call := range outboundCalls {
+		if strings.HasPrefix(frame, call) {
+			return true
+		}
+	}
+	return false
+}
+
 // Set is the exclusions in force at one moment.
 type Set map[string]bool
 

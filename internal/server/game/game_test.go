@@ -310,3 +310,33 @@ func TestAYoungProjectDoesNotSeeRegressionsEverywhere(t *testing.T) {
 		t.Fatalf("%d bosses after the cost doubled", n)
 	}
 }
+
+// Production, 2026-10-01 01:37 in Rome: the day had 1.3 hours of night traffic and scored 100 against
+// 67.5 the day before. The index people see is the last 24 hours, which always holds a peak.
+func TestTheIndexAtNightIsTheLastDayNotTheEmptyNight(t *testing.T) {
+	f := newFixture(t, nil)
+	yesterday := time.Date(2026, 9, 30, 0, 0, 0, 0, rome)
+	f.traffic(yesterday, 24*60, 100, 12, 50, 5)
+	today := time.Date(2026, 10, 1, 0, 0, 0, 0, rome)
+	f.traffic(today, 90, 5, 1, 0, 0)
+
+	f.evaluate(today.Add(95 * time.Minute))
+
+	var night float64
+	if err := f.db.Q().Row(f.ctx, "SELECT score FROM score_days WHERE project_id = ? AND day = ?", f.project.ID, "2026-10-01").Scan(&night); err != nil {
+		t.Fatal(err)
+	}
+	if night < 99 {
+		t.Fatalf("the quiet night alone should score full marks, got %v", night)
+	}
+	var window, hours float64
+	if err := f.db.Q().Row(f.ctx, "SELECT score, hours FROM score_window WHERE project_id = ?", f.project.ID).Scan(&window, &hours); err != nil {
+		t.Fatal(err)
+	}
+	if window > 50 {
+		t.Fatalf("the last 24 hours hold the slow day: score %v", window)
+	}
+	if hours < 23 || hours > 24.01 {
+		t.Fatalf("the window covers the last day, got %v hours", hours)
+	}
+}

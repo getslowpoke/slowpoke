@@ -56,3 +56,32 @@ func TestAPublicDemoOpensWithOneLink(t *testing.T) {
 		t.Fatalf("/demo with a wrong password: %d to %q", res.StatusCode, res.Header.Get("Location"))
 	}
 }
+
+// The site lets the visitor pick which demo to open: /demo?project= opens one of the demo's own
+// projects, and anything else (a typo, someone else's slug) falls back to the first one.
+func TestThePublicDemoOpensTheProjectTheVisitorPicked(t *testing.T) {
+	c := newClient(t)
+	c.login()
+	c.project()
+	_, _ = c.do("POST", "/api/logout", nil)
+	c.srv.DemoEmail, c.srv.DemoPassword, c.srv.DemoProject = "ada@example.com", "correct horse battery", "demo-shop, nestwise"
+
+	noFollow := *c.http
+	noFollow.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	for query, want := range map[string]string{
+		"":                            "/projects/demo-shop",
+		"?project=nestwise":           "/projects/nestwise",
+		"?project=demo-shop":          "/projects/demo-shop",
+		"?project=secret":             "/projects/demo-shop",
+		"?project=%2F%2Fevil.example": "/projects/demo-shop",
+	} {
+		res, err := noFollow.Get(c.base + "/demo" + query)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		if res.StatusCode != http.StatusFound || res.Header.Get("Location") != want {
+			t.Errorf("/demo%s: %d to %q, want %q", query, res.StatusCode, res.Header.Get("Location"), want)
+		}
+	}
+}

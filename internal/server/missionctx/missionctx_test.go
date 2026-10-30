@@ -150,3 +150,48 @@ func TestTheBriefNamesTheAdviceTheTeamMuted(t *testing.T) {
 		t.Fatalf("brief:\n%s", md)
 	}
 }
+
+// A list of 50 missions on a production project took 17 s: every mission without an effort re-read the
+// costs of the whole project for the last week to diagnose one query. Queries reads them once for the list.
+func TestQueriesReadTheProjectCostsOnceForAList(t *testing.T) {
+	db, p, ctx, now := setup(t)
+	svc := ingest.New(db)
+	svc.Now = func() time.Time { return now }
+	slow := func(batch, sql string, sum float64) string {
+		fp := fingerprint.Of(sql)
+		hash := fingerprint.Hash(fp)
+		_, err := svc.Ingest(ctx, p, protocol.Payload{
+			BatchID: batch, Agent: protocol.AgentInfo{Host: "db-1", Kind: "agent", Sources: []string{"mysql:db"}},
+			DB: []protocol.DBBucket{{Source: "mysql-digest", Minute: now.Add(-time.Hour).Unix(), Queries: map[string]protocol.QueryStat{hash: {Fingerprint: fp, Sample: fingerprint.Redact(sql), N: 100, Sum: sum, Max: 2, Rows: 480000}}}},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return hash
+	}
+	a := slow("a", "select * from orders where customer_id = 42", 300)
+	b := slow("b", "select * from invoices where customer_id = 42", 200)
+
+	qs := NewQueries(db, p, now)
+	for _, hash := range []string{a, b} {
+		got, err := qs.Load(ctx, hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want, _ := LoadQuery(ctx, db, p, hash, now)
+		if got.Stats != want.Stats || len(got.Diagnoses) != len(want.Diagnoses) || got.Fingerprint != want.Fingerprint {
+			t.Fatalf("%s: loader %+v, alone %+v", hash, got, want)
+		}
+	}
+
+	// Once read, the costs are not read again: what arrives later does not change the list being built.
+	slow("a2", "select * from orders where customer_id = 42", 900)
+	again, _ := qs.Load(ctx, a)
+	fresh, _ := LoadQuery(ctx, db, p, a, now)
+	if again.Stats == fresh.Stats {
+		t.Fatalf("the loader read the costs again: %+v", again.Stats)
+	}
+	if _, err := qs.Load(ctx, "nope"); err != ErrNotFound {
+		t.Fatalf("unknown hash: %v", err)
+	}
+}

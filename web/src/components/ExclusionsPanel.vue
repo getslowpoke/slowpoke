@@ -1,13 +1,13 @@
 <script setup>
 import { ref } from 'vue'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { duration, dateTime } from '../lib/format.js'
 import { kindWords, reasonInWords } from '../lib/exclusions.js'
 
 const props = defineProps({ slug: String })
-const { data, reload } = useLoad(() => api.get(`/api/projects/${props.slug}/exclusions`))
+const { data, reload } = useGet(() => `/api/projects/${props.slug}/exclusions`)
 const removing = ref(0)
 
 async function remove(e) {

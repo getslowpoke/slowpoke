@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.2.0 - 2026-10-30
+
+**The first administrator needs a setup code.** Until somebody has set the panel up, the server
+makes a one-time code, logs it at every start and prints it with `slowpoke-server setup-code`;
+the installer prints it at the end with a link that fills it in. Before this, whoever reached a
+fresh panel first became its administrator, and the installer publishes port 8080 on every
+interface. Ten wrong codes from one address block it for 15 minutes; `create-user` on the
+command line still needs none.
+
+**A team, not a single login.** A Team page shows who is in, invites people by email and removes
+them. Email goes out through SMTP or straight through a provider's API (Brevo, Resend, Postmark,
+SendGrid, Mailgun, Cloudflare), chosen and tested from the panel, with a test message to prove it.
+
+**Act from where you look.** A slow endpoint or query becomes a mission from its own page, and
+the leave-out dialog ticks every related item at once.
+
+**A panel that feels faster.** Pages open at once with a loading skeleton and the last answer
+while the fresh one arrives; missions on the overview state their real target, the live tiles
+say their time, and the activity feed is translated like the rest. A short welcome tour explains
+what Slowpoke is on the first visit.
+
+**Slack**: cards with the logo, a guide to connect it, and two new moments worth a message.
+
+**Demos from real numbers.** `export-profile` reads the measures of a project (never users, tokens,
+settings or samples), `rename-profile` replaces every name with a dictionary and refuses to write
+while a denied word survives, and `seed-demo -profile` rebuilds it onto today hour by hour, with
+missions, bosses and badges born when they would have been. The public demo can offer more than
+one project (`/demo?project=`), and a replay keeps an imported project alive without agents.
+
 ## 0.1.0 - 2026-09-22
 
 First public release. Slowpoke turns slow requests and slow queries into technical debt with a

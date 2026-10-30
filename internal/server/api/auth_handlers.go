@@ -2,8 +2,10 @@ package api
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/getslowpoke/slowpoke/internal/server/auth"
@@ -60,10 +62,30 @@ func (s *Server) handleDemo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	next := "/"
-	if s.DemoProject != "" {
-		next = "/projects/" + url.PathEscape(s.DemoProject)
+	if p := s.demoProject(r.URL.Query().Get("project")); p != "" {
+		next = "/projects/" + url.PathEscape(p)
 	}
 	http.Redirect(w, r, next, http.StatusFound)
+}
+
+// demoProject is the project /demo opens. DemoProject may list several, comma separated, so the
+// site can let the visitor choose with ?project=; only those are ever opened, anything else gets
+// the first one.
+func (s *Server) demoProject(asked string) string {
+	first := ""
+	for _, p := range strings.Split(s.DemoProject, ",") {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		if first == "" {
+			first = p
+		}
+		if p == asked {
+			return p
+		}
+	}
+	return first
 }
 
 func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
@@ -76,15 +98,34 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "already set up")
 		return
 	}
-	var c credentials
+	// Wrong codes count like wrong passwords: 10 per IP every 15 minutes leaves a 60-bit
+	// code out of reach of guessing.
+	ip := s.clientIP(r)
+	if s.limiter.blocked(ip) {
+		writeError(w, http.StatusTooManyRequests, "too many attempts, retry in 15 minutes")
+		return
+	}
+	var c struct {
+		credentials
+		SetupCode string `json:"setup_code"`
+	}
 	if err := decode(r, &c); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+	if !s.Auth.CheckSetupCode(r.Context(), c.SetupCode) {
+		s.limiter.fail(ip)
+		writeError(w, http.StatusForbidden, "wrong setup code: the installer printed it, and slowpoke-server setup-code prints it again")
 		return
 	}
 	u, err := s.Auth.CreateUser(r.Context(), c.Name, c.Email, c.Password)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, err.Error())
 		return
+	}
+	// The administrator exists, so the code would open nothing: forget it anyway.
+	if err := s.Auth.ClearSetupCode(r.Context()); err != nil {
+		slog.Warn("cannot forget the setup code", "err", err)
 	}
 	if err := s.setSession(w, r, u.ID); err != nil {
 		serverError(w, err)

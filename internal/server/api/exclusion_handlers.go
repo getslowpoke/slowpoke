@@ -127,3 +127,54 @@ func (s *Server) exclusionOf(r *http.Request, p project.Project, kind, target st
 	}
 	return nil
 }
+
+// handleRelatedExclusions is what goes with an endpoint the team is leaving out: the same path
+// under its other methods, and the PHP stalls waiting on another service. Excluding only the GET
+// of an export, or every endpoint of a partner's API but not the curl_exec() they wait in, left
+// the rest open as regressions nobody could fix. Only what costs time and is not out already.
+func (s *Server) handleRelatedExclusions(w http.ResponseWriter, r *http.Request, p project.Project) {
+	ctx := r.Context()
+	related := []map[string]any{}
+	kind, target := r.URL.Query().Get("kind"), strings.TrimSpace(r.URL.Query().Get("target"))
+	if kind != "" && kind != exclude.KindEndpoint || target == "" {
+		writeJSON(w, http.StatusOK, map[string]any{"related": related})
+		return
+	}
+	now := time.Now()
+	costs, err := s.Metrics.Costs(ctx, p.ID, now.Add(-excludedWindow), now) // already without what is out
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	days := s.Metrics.ObservedDays(ctx, p.ID, excludedWindow, now)
+	// One endpoint seen by several web servers is one thing to leave out.
+	seconds := map[string]float64{}
+	labels := map[string]string{}
+	var order []string
+	for _, c := range costs {
+		var why, label string
+		switch {
+		case c.Kind == exclude.KindEndpoint:
+			_, endpoint, _ := strings.Cut(c.Target, " ")
+			if !exclude.SamePath(target, endpoint) {
+				continue
+			}
+			why, label = "same_path", endpoint
+		case c.Kind == exclude.KindPHP && exclude.OutboundFrame(c.Target):
+			why, label = "outbound", c.Target
+		default:
+			continue
+		}
+		key := c.Kind + "\x00" + exclude.Key(c.Kind, label) + "\x00" + why
+		if _, ok := seconds[key]; !ok {
+			order = append(order, key)
+			labels[key] = label
+		}
+		seconds[key] += c.Seconds
+	}
+	for _, key := range order {
+		parts := strings.SplitN(key, "\x00", 3)
+		related = append(related, map[string]any{"kind": parts[0], "target": labels[key], "why": parts[2], "seconds_per_day": r2(seconds[key] / days)})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"related": related})
+}

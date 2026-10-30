@@ -290,6 +290,27 @@ func Build(ctx context.Context, db *store.DB, p project.Project, missionID int64
 
 // LoadQuery returns what is known about a query fingerprint, with the doctor's diagnosis.
 func LoadQuery(ctx context.Context, db *store.DB, p project.Project, hash string, now time.Time) (*Query, error) {
+	return NewQueries(db, p, now).Load(ctx, hash)
+}
+
+// Queries loads several queries against one read of the project's costs. The costs cover every target of
+// the project: reading them again for each query made a list of 50 missions take 17 s on a real project.
+type Queries struct {
+	db    *store.DB
+	p     project.Project
+	now   time.Time
+	costs []metrics.Cost
+	days  float64
+	read  bool
+}
+
+func NewQueries(db *store.DB, p project.Project, now time.Time) *Queries {
+	return &Queries{db: db, p: p, now: now}
+}
+
+// Load returns what is known about one query fingerprint, with the doctor's diagnosis.
+func (qs *Queries) Load(ctx context.Context, hash string) (*Query, error) {
+	db, p, now := qs.db, qs.p, qs.now
 	q := &Query{Hash: hash, Routes: []RouteUse{}}
 	var id int64
 	var sample, explain sql.NullString
@@ -303,14 +324,17 @@ func LoadQuery(ctx context.Context, db *store.DB, p project.Project, hash string
 	}
 	q.Sample = sample.String
 
-	costs, err := metrics.Reader{DB: db}.Costs(ctx, p.ID, now.Add(-7*24*time.Hour), now)
-	if err != nil {
-		return nil, err
+	if !qs.read {
+		costs, err := metrics.Reader{DB: db}.Costs(ctx, p.ID, now.Add(-7*24*time.Hour), now)
+		if err != nil {
+			return nil, err
+		}
+		qs.costs, qs.days, qs.read = costs, metrics.Reader{DB: db}.ObservedDays(ctx, p.ID, 7*24*time.Hour, now), true
 	}
 	var rows7 int64
 	_ = db.Q().Row(ctx, "SELECT COALESCE(SUM(rows),0) FROM query_hours WHERE fingerprint_id = ? AND hour >= ?", id, now.Add(-7*24*time.Hour).Unix()).Scan(&rows7)
-	days := metrics.Reader{DB: db}.ObservedDays(ctx, p.ID, 7*24*time.Hour, now)
-	for _, c := range costs {
+	days := qs.days
+	for _, c := range qs.costs {
 		if c.Kind == "query" && c.Target == hash {
 			q.Stats = doctor.Stats{CallsPerDay: float64(c.Count) / days, SecondsPerDay: c.Seconds / days}
 			if c.Count > 0 {

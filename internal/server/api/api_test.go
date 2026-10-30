@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -69,7 +70,11 @@ func (c *client) do(method, path string, body any, headers ...string) (int, map[
 
 func (c *client) login() {
 	c.t.Helper()
-	if code, body := c.do("POST", "/api/setup", map[string]string{"name": "Ada", "email": "ada@example.com", "password": "correct horse battery"}); code != 200 {
+	setupCode, err := c.srv.Auth.SetupCode(context.Background())
+	if err != nil {
+		c.t.Fatal(err)
+	}
+	if code, body := c.do("POST", "/api/setup", map[string]string{"name": "Ada", "email": "ada@example.com", "password": "correct horse battery", "setup_code": setupCode}); code != 200 {
 		c.t.Fatalf("setup %d %v", code, body)
 	}
 }
@@ -270,6 +275,10 @@ func TestOverviewSlowAndQueryDoctor(t *testing.T) {
 		if _, ok := overview[key]; !ok {
 			t.Errorf("overview misses %q", key)
 		}
+	}
+	// The panel names the season in the reader's language: it needs the month, not an English name.
+	if start, _ := overview["points"].(map[string]any)["season_start"].(string); !regexp.MustCompile(`^\d{4}-\d{2}$`).MatchString(start) {
+		t.Errorf("points.season_start = %q, want YYYY-MM", start)
 	}
 
 	code, slow := c.do("GET", "/api/projects/shop/slow?window=24h", nil)
@@ -817,5 +826,54 @@ func TestJobsCarryFailureRateCostPerDayAndTheWeekBefore(t *testing.T) {
 	}
 	if job["last_at"].(float64) <= 0 {
 		t.Fatalf("no last run: %v", job["last_at"])
+	}
+}
+
+// Production, 2026-10-01 01:37 in Rome: the panel showed 100 "today so far" out of 1.3 hours of
+// night, +32.5 against the day before. The big number is the last 24 hours; the calendar day is a footnote.
+func TestOverviewIndexIsTheLast24HoursNotTheNight(t *testing.T) {
+	c := newClient(t)
+	c.login()
+	c.project()
+	ctx := context.Background()
+	p, _ := c.srv.Projects.BySlug(ctx, "shop")
+	now := time.Now().In(p.Location())
+	today, yesterday := now.Format("2006-01-02"), now.AddDate(0, 0, -1).Format("2006-01-02")
+	for _, q := range []struct {
+		sql  string
+		args []any
+	}{
+		{"INSERT INTO score_days (project_id, day, score, partial, closed, hours, components, updated_at) VALUES (?, ?, 67.5, FALSE, TRUE, 22.6, '[]', 0)", []any{p.ID, yesterday}},
+		{"INSERT INTO score_days (project_id, day, score, partial, closed, hours, components, updated_at) VALUES (?, ?, 100, TRUE, FALSE, 1.3, '[]', 0)", []any{p.ID, today}},
+		{`INSERT INTO score_window (project_id, score, partial, hours, components, updated_at) VALUES (?, 66, FALSE, 23.9, '[{"key":"p95","weight":20,"points":12,"lost":8,"available":true}]', 0)`, []any{p.ID}},
+	} {
+		if _, err := c.srv.DB.Q().Exec(ctx, q.sql, q.args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	_, overview := c.do("GET", "/api/projects/shop/overview", nil)
+	idx := overview["today"].(map[string]any)
+	if idx["score"] != 66.0 || idx["hours"] != 23.9 || idx["window"] != "24h" {
+		t.Fatalf("the index must be the last 24 hours: %v", idx)
+	}
+	if idx["delta"] != -1.5 {
+		t.Fatalf("delta against the last closed day: %v", idx["delta"])
+	}
+	if lvl := idx["level"].(map[string]any); lvl["name"] == "Platinum" {
+		t.Fatalf("level from the window, not the night: %v", lvl)
+	}
+	if comps := idx["components"].([]any); len(comps) != 1 {
+		t.Fatalf("components from the window: %v", comps)
+	}
+	soFar := idx["so_far"].(map[string]any)
+	if soFar["score"] != 100.0 || soFar["hours"] != 1.3 {
+		t.Fatalf("today so far stays available as a footnote: %v", soFar)
+	}
+
+	// The project list and the assistant read the same number.
+	_, list := c.do("GET", "/api/projects", nil)
+	if s := list["projects"].([]any)[0].(map[string]any)["score"]; s != 66.0 {
+		t.Fatalf("project list score %v", s)
 	}
 }

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, duration, ago } from '../lib/format.js'
 import State from '../components/State.vue'
@@ -12,11 +12,12 @@ import { busyInWords } from '../lib/busyHours.js'
 import ExcludeDialog from '../components/ExcludeDialog.vue'
 import DismissDialog from '../components/DismissDialog.vue'
 import { excludeTarget } from '../lib/exclusions.js'
+import { seasonName } from '../lib/activityWords.js'
 
 const props = defineProps({ project: Object })
 const busy = ref(null)
 api.get(`/api/projects/${props.project.slug}/busy-hours`).then((b) => (busy.value = b)).catch(() => {})
-const { data, error, loading, reload } = useLoad(() => api.get(`/api/projects/${props.project.slug}/missions`), { every: 60000 })
+const { data, error, loading, reload } = useGet(() => `/api/projects/${props.project.slug}/missions`, { every: 60000 })
 const bosses = computed(() => (data.value?.open || []).filter((m) => m.type === 'boss'))
 const sortBy = ref('roi')
 const missions = computed(() => (data.value?.open || []).filter((m) => m.type !== 'boss').slice().sort((a, b) => (sortBy.value === 'roi' ? b.roi - a.roi : b.cost_seconds_per_day - a.cost_seconds_per_day)))
@@ -33,7 +34,7 @@ const onDismiss = (m) => (dismissing.value = m)
     <PageHeader :title="t('Missions')" :subtitle="`${t('Technical debt')}: ${duration(data.debt.seconds_per_day)} ${t('of waiting per day')}`">
       <div class="card flex items-center gap-3 px-4 py-2">
         <div class="num text-2xl font-semibold text-poke-400">{{ num(data.points.season) }}</div>
-        <div class="text-xs leading-tight text-ink-400">pts<br />{{ data.points.season_name }}</div>
+        <div class="text-xs leading-tight text-ink-400">pts<br />{{ seasonName(data.points.season_start, data.points.season_name) }}</div>
       </div>
     </PageHeader>
 
@@ -102,7 +103,7 @@ const onDismiss = (m) => (dismissing.value = m)
         </section>
 
         <section v-if="data.leaderboard_enabled" class="card card-pad">
-          <div class="label">{{ t('Leaderboard') }} · {{ data.points.season_name }}</div>
+          <div class="label">{{ t('Leaderboard') }} · {{ seasonName(data.points.season_start, data.points.season_name) }}</div>
           <div class="mt-3 space-y-2">
             <div v-for="(p, i) in data.leaderboard" :key="p.person" class="flex items-center gap-3">
               <span class="w-6 text-center">{{ medals[i] || i + 1 }}</span>

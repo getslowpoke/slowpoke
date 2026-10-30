@@ -47,7 +47,7 @@ const statusStyle = {
           <template v-else>{{ m.label }}</template>
         </component>
         <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-400">
-          <span v-if="m.status === 'open'">{{ missionInWords({ ...m, current: perDay(m.current ?? m.baseline) }, settings) }}</span>
+          <span v-if="m.status === 'open'">{{ missionInWords({ ...m, current: perDay(m.current ?? m.baseline), baseline: perDay(m.baseline) }, settings) }}</span>
           <span v-else :class="statusStyle[m.status]" :title="t(missionStatusWhy[m.status] || '')">{{ t(missionStatusNames[m.status] || m.status) }}<template v-if="m.saved_seconds_per_day"> · −{{ duration(m.saved_seconds_per_day) }} {{ t('removed per day') }}</template></span>
           <span v-if="isBoss && m.status === 'open' && hoursLeft !== null" class="text-bad">⏱ {{ Math.round(hoursLeft) }}h</span>
           <span v-if="m.effort && m.status === 'open'" class="chip">⚒ {{ returnInWords(m) }}</span>

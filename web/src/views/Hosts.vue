@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, pct, ago } from '../lib/format.js'
 import State from '../components/State.vue'
@@ -11,7 +11,7 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
 import InstallWizard from '../components/InstallWizard.vue'
 
 const props = defineProps({ project: Object })
-const { data, error, loading, reload } = useLoad(() => api.get(`/api/projects/${props.project.slug}/hosts`), { every: 20000 })
+const { data, error, loading, reload } = useGet(() => `/api/projects/${props.project.slug}/hosts`, { every: 20000 })
 const removing = ref(null)
 const busy = ref(false)
 const wizard = ref(false)

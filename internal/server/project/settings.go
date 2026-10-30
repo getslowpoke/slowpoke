@@ -96,7 +96,7 @@ var Metrics = map[string]string{
 }
 
 // NotificationEvents are the activity types a rule can route (deploys are split by verdict).
-var NotificationEvents = []string{"level_up", "badge", "mission_completed", "boss", "boss_defeated", "boss_escaped", "deploy_better", "deploy_worse", "deploy_neutral", "command_overlap", "debt_goal", "mission_claimed", "pull_request", "mission_shipped", "mission_confirmed", "mission_relapsed"}
+var NotificationEvents = []string{"level_up", "badge", "mission_completed", "boss", "boss_defeated", "boss_escaped", "deploy_better", "deploy_worse", "deploy_neutral", "command_overlap", "debt_goal", "mission_claimed", "pull_request", "mission_shipped", "mission_confirmed", "mission_relapsed", "boss_deadline", "leaderboard"}
 
 var ChannelTypes = []string{"slack", "discord", "teams", "telegram", "webhook"}
 
@@ -380,6 +380,7 @@ func (s Settings) Masked() Settings {
 		if c.BotToken != "" {
 			c.BotToken = SecretMask
 		}
+		c.URL = maskURL(c.URL)
 		out.Notifications.Channels = append(out.Notifications.Channels, c)
 	}
 	return out
@@ -397,6 +398,13 @@ func (s *Settings) RestoreSecrets(stored Settings) {
 		}
 	}
 	for i, c := range s.Notifications.Channels {
+		if strings.Contains(c.URL, SecretMask) {
+			for _, old := range stored.Notifications.Channels {
+				if old.ID == c.ID {
+					s.Notifications.Channels[i].URL = old.URL
+				}
+			}
+		}
 		if c.BotToken == SecretMask {
 			for _, old := range stored.Notifications.Channels {
 				if old.ID == c.ID {
@@ -405,4 +413,16 @@ func (s *Settings) RestoreSecrets(stored Settings) {
 			}
 		}
 	}
+}
+
+// maskURL keeps the scheme and host of a webhook and hides the rest: the path is the secret.
+func maskURL(raw string) string {
+	if raw == "" {
+		return ""
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		return SecretMask
+	}
+	return u.Scheme + "://" + u.Host + "/" + SecretMask
 }

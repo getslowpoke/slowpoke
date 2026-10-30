@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, latency, duration, compact, pct } from '../lib/format.js'
 import State from '../components/State.vue'
@@ -19,14 +20,26 @@ const tab = ref('queries')
 // What the team cannot fix stops counting, from the list where it is looked at.
 const excluding = ref(null)
 const leaveOut = (kind, target, label) => (excluding.value = { kind, target, label })
+// Straight to a mission from the list: the server opens one, or answers with the one already open.
+const router = useRouter()
+const opening = ref('')
+async function makeMission(kind, target) {
+  opening.value = kind + ' ' + target
+  try {
+    const res = await api.post(`/api/projects/${props.project.slug}/missions`, { kind, target })
+    router.push(`/projects/${props.project.slug}/missions/${res.id}`)
+  } catch {
+    opening.value = ''
+  }
+}
 // One machine at a time: with a dozen of them, everything together is unreadable.
 const machine = ref('')
 const machines = ref([])
 const database = ref('')
 api.get(`/api/projects/${props.project.slug}/hosts`).then((h) => (machines.value = (h.hosts || []).filter((m) => m.kind === 'agent').map((m) => m.name))).catch(() => {})
-const { data, error, loading, reload } = useLoad(
-  () => api.get(`/api/projects/${props.project.slug}/slow?window=${windowSel.value}` +
-    `${machine.value ? `&host=${encodeURIComponent(machine.value)}` : ''}${database.value ? `&db=${encodeURIComponent(database.value)}` : ''}`),
+const { data, error, loading, reload } = useGet(
+  () => `/api/projects/${props.project.slug}/slow?window=${windowSel.value}` +
+    `${machine.value ? `&host=${encodeURIComponent(machine.value)}` : ''}${database.value ? `&db=${encodeURIComponent(database.value)}` : ''}`,
   { watchSources: [windowSel, machine, database] },
 )
 
@@ -54,7 +67,7 @@ const phpRows = computed(() => rows(data.value?.php, ['frame', 'code']))
 const maxQuery = computed(() => Math.max(1e-9, ...(data.value?.queries || []).map((q) => q.seconds)))
 const maxEndpoint = computed(() => Math.max(1e-9, ...(data.value?.endpoints || []).map((e) => e.slow_seconds)))
 const maxPhp = computed(() => Math.max(1, ...(data.value?.php || []).map((p) => p.count)))
-const hotspots = useLoad(() => api.get(`/api/projects/${props.project.slug}/hotspots`))
+const hotspots = useGet(() => `/api/projects/${props.project.slug}/hotspots`)
 const maxHot = computed(() => Math.max(1e-9, ...(hotspots.data.value?.hotspots || []).map((h) => h.seconds_per_day)))
 // The same row, a window earlier: half a second a day is noise, not news.
 function delta(row) {
@@ -133,6 +146,7 @@ const tabs = computed(() => [
                   <span v-if="q.excluded" class="chip" :title="t('Left out of the speed index, the debt and the missions.')">🙈 {{ t('left out') }}</span>
                   <span v-if="q.origin" class="hidden truncate font-mono text-[11px] text-ink-500 md:inline">{{ q.origin }}</span>
                   <button v-if="!q.excluded" class="chip hover:border-ink-500" :title="t('Leave it out of the score')" @click.stop="leaveOut('query', q.hash, q.fingerprint)">🙈</button>
+                  <button class="chip hover:border-ink-500" :title="t('Make it a mission')" :disabled="opening === 'query ' + q.hash" @click.stop="makeMission('query', q.hash)">🎯</button>
                 </div>
               </td>
               <td class="num whitespace-nowrap px-3 py-3 text-right font-medium">{{ duration(q.seconds) }}</td>
@@ -174,6 +188,7 @@ const tabs = computed(() => [
                   <span v-if="e.outbound_share >= 0.2" class="chip !border-warn/30 !text-warn" :title="t('Share of its time spent waiting on other services.')">⇢ {{ t('{share}% outside', { share: num(e.outbound_share * 100, 0) }) }}</span>
                   <span class="text-[11px] text-ink-500">{{ e.source }}</span>
                   <button v-if="!e.excluded" class="chip hover:border-ink-500" :title="t('Leave it out of the score')" @click.stop="leaveOut('endpoint', e.endpoint, e.endpoint)">🙈</button>
+                  <button class="chip hover:border-ink-500" :title="t('Make it a mission')" :disabled="opening === 'endpoint ' + e.source + ' ' + e.endpoint" @click.stop="makeMission('endpoint', e.source + ' ' + e.endpoint)">🎯</button>
                 </div>
               </td>
               <td class="num whitespace-nowrap px-3 py-3 text-right font-medium">{{ duration(e.slow_seconds) }}</td>
@@ -218,6 +233,7 @@ const tabs = computed(() => [
             <div class="flex shrink-0 items-center gap-2">
               <span v-if="p.excluded" class="chip" :title="t('Left out of the speed index, the debt and the missions.')">🙈 {{ t('left out') }}</span>
               <button v-else class="chip hover:border-ink-500" :title="t('Leave it out of the score')" @click.stop="leaveOut('php', p.frame, phpWait(p.frame).words)">🙈</button>
+              <button class="chip hover:border-ink-500" :title="t('Make it a mission')" :disabled="opening === 'php ' + p.frame" @click.stop="makeMission('php', p.frame)">🎯</button>
               <div class="num font-medium">{{ num(p.count) }}×</div>
             </div>
           </div>

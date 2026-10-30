@@ -1,13 +1,14 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, latency, duration, compact, ago } from '../lib/format.js'
 import ScoreRing from '../components/ScoreRing.vue'
+import { activityTitle } from '../lib/activityWords.js'
 
 const props = defineProps({ slug: String })
-const { data } = useLoad(() => api.get(`/api/projects/${props.slug}/overview`), { every: 15000 })
+const { data } = useGet(() => `/api/projects/${props.slug}/overview`, { every: 15000 })
 const now = ref(new Date())
 setInterval(() => (now.value = new Date()), 1000)
 const celebrate = ref(null)
@@ -47,7 +48,7 @@ const ringSize = Math.min(380, Math.round(window.innerWidth * 0.7))
         <div class="card p-6">
           <div class="label !text-sm">{{ t('Activity') }}</div>
           <div v-for="a in data.activity.slice(0, 5)" :key="a.id" class="mt-3 flex items-center gap-4 text-lg sm:text-2xl">
-            <span>{{ a.icon }}</span><span class="truncate">{{ a.title }}</span><span class="ml-auto shrink-0 text-base text-ink-500">{{ ago(a.created_at) }}</span>
+            <span>{{ a.icon }}</span><span class="truncate">{{ activityTitle(a) }}</span><span class="ml-auto shrink-0 text-base text-ink-500">{{ ago(a.created_at) }}</span>
           </div>
         </div>
       </div>

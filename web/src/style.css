@@ -148,3 +148,161 @@ button:disabled {
     display: none !important;
   }
 }
+
+/* Something is loading: a thin moving line at the top, shown only past a short delay so quick pages
+   never flicker, and above the old numbers when they are already on screen. */
+.loading-bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.loading-bar.on {
+  opacity: 1;
+  transition-delay: 0.25s;
+}
+.loading-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, var(--color-poke-400), transparent);
+  animation: loading-bar 1.1s ease-in-out infinite;
+}
+@keyframes loading-bar {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-bar::before {
+    width: 100%;
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* Welcome tour: the card rises in, each slide slides from the side it comes from. */
+.tour-backdrop {
+  animation: tour-fade 0.25s ease-out both;
+}
+.tour-card {
+  animation: tour-rise 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+}
+.tour-art.from-right {
+  animation: tour-in-right 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.tour-art.from-left {
+  animation: tour-in-left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.tour-text {
+  animation: tour-fade 0.35s ease-out 0.05s both;
+}
+.tour-float {
+  animation: tour-float 3.2s ease-in-out infinite;
+}
+.tour-pop {
+  animation: tour-pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+.tour-progress {
+  animation: tour-progress 1.4s ease-out 0.3s both;
+}
+@keyframes tour-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes tour-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+}
+@keyframes tour-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+@keyframes tour-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+}
+@keyframes tour-float {
+  50% {
+    transform: translateY(-8px) rotate(-3deg);
+  }
+}
+@keyframes tour-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes tour-progress {
+  from {
+    width: 8%;
+  }
+  to {
+    width: 72%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-backdrop,
+  .tour-card,
+  .tour-art,
+  .tour-text,
+  .tour-float,
+  .tour-pop {
+    animation: tour-fade 0.2s ease-out both;
+  }
+  .tour-progress {
+    animation: none;
+    width: 72%;
+  }
+}
+.tour-shake {
+  animation: tour-shake 2.4s ease-in-out infinite;
+}
+.tour-cta {
+  animation: tour-cta 2s ease-in-out 0.6s infinite;
+}
+.tour-glow {
+  transition: background-color 0.5s ease;
+}
+@keyframes tour-shake {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0);
+  }
+  65% {
+    transform: rotate(-8deg) scale(1.05);
+  }
+  75% {
+    transform: rotate(8deg) scale(1.05);
+  }
+  85% {
+    transform: rotate(-4deg);
+  }
+}
+@keyframes tour-cta {
+  50% {
+    box-shadow: 0 0 0 6px rgb(255 111 142 / 0.18);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-shake,
+  .tour-cta {
+    animation: none;
+  }
+}

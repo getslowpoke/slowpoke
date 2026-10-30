@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { session } from '../lib/session.js'
 import { t, locale, setLocale } from '../lib/i18n.js'
 import { num, ago } from '../lib/format.js'
@@ -11,7 +11,7 @@ import Empty from '../components/Empty.vue'
 import TimezoneSelect from '../components/TimezoneSelect.vue'
 
 const router = useRouter()
-const { data, error, loading, reload } = useLoad(() => api.get('/api/projects'))
+const { data, error, loading, reload } = useGet(() => '/api/projects')
 const name = ref('')
 const timezone = ref(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC')
 const creating = ref(false)
@@ -49,6 +49,7 @@ async function logout() {
       </div>
       <div class="flex items-center gap-2 text-sm">
         <button class="btn-ghost !py-1.5 text-xs" @click="setLocale(locale === 'it' ? 'en' : 'it')">{{ locale === 'it' ? 'EN' : 'IT' }}</button>
+        <router-link to="/team" class="btn-ghost !py-1.5 text-xs">{{ t('Team') }}</router-link>
         <span class="hidden text-ink-400 sm:inline">{{ session.user?.email }}</span>
         <button class="btn-ghost !py-1.5 text-xs" @click="logout">{{ t('Log out') }}</button>
       </div>

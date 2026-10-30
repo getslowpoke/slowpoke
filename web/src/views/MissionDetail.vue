@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, latency, duration, dateTime, ago, day, clock } from '../lib/format.js'
 import State from '../components/State.vue'
@@ -18,7 +18,7 @@ import DismissDialog from '../components/DismissDialog.vue'
 import { excludeTarget } from '../lib/exclusions.js'
 
 const props = defineProps({ project: Object, id: String })
-const { data, error, loading, reload } = useLoad(() => api.get(`/api/projects/${props.project.slug}/missions/${props.id}`), { watchSources: [() => props.id] })
+const { data, error, loading, reload } = useGet(() => `/api/projects/${props.project.slug}/missions/${props.id}`, { watchSources: [() => props.id] })
 
 const c = computed(() => data.value?.context)
 const m = computed(() => c.value?.mission)

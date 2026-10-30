@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, pct, bytes, clock, day, ago } from '../lib/format.js'
 import State from '../components/State.vue'
@@ -14,7 +14,7 @@ import { useRouter } from 'vue-router'
 
 const props = defineProps({ project: Object, id: String })
 const windowSel = ref('24h')
-const { data, error, loading, reload } = useLoad(() => api.get(`/api/projects/${props.project.slug}/hosts/${props.id}?window=${windowSel.value}`), { watchSources: [windowSel] })
+const { data, error, loading, reload } = useGet(() => `/api/projects/${props.project.slug}/hosts/${props.id}?window=${windowSel.value}`, { watchSources: [windowSel] })
 
 const labels = computed(() => (data.value?.series || []).map((p) => (windowSel.value === '1h' || windowSel.value === '24h' ? clock(p.t) : `${day(new Date(p.t * 1000).toISOString().slice(0, 10))} ${clock(p.t)}`)))
 const s = (k) => (data.value?.series || []).map((p) => p[k])

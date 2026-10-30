@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { api } from '../lib/api.js'
-import { useLoad } from '../lib/useLoad.js'
+import { useGet } from '../lib/useLoad.js'
 import { t } from '../lib/i18n.js'
 import { num, latency, duration, compact, ago, clock, day } from '../lib/format.js'
 import State from '../components/State.vue'
@@ -9,12 +9,13 @@ import LineChart from '../components/LineChart.vue'
 import CopyButton from '../components/CopyButton.vue'
 import Severity from '../components/Severity.vue'
 import MissionCard from '../components/MissionCard.vue'
+import MissionButton from '../components/MissionButton.vue'
 import MuteDialog from '../components/MuteDialog.vue'
 import ExcludeDialog from '../components/ExcludeDialog.vue'
 import { reasonInWords } from '../lib/exclusions.js'
 
 const props = defineProps({ project: Object, hash: String })
-const { data, error, loading, reload } = useLoad(() => api.get(`/api/projects/${props.project.slug}/queries/${props.hash}`), { watchSources: [() => props.hash] })
+const { data, error, loading, reload } = useGet(() => `/api/projects/${props.project.slug}/queries/${props.hash}`, { watchSources: [() => props.hash] })
 
 // Advice the team cannot follow (a vendor's table, an index the DBA refuses) is muted for this
 // query: it leaves the prompt, the report and the missions, and stays readable below.
@@ -75,7 +76,10 @@ const planRows = computed(() => {
         <div class="label">{{ t('Query doctor') }} · <span class="font-mono normal-case tracking-normal">{{ hash }}</span></div>
         <pre class="code mt-2 whitespace-pre-wrap break-words !text-[13px] !text-ink-100">{{ data.fingerprint }}</pre>
       </div>
-      <button v-if="!data.exclusion" class="btn-ghost !py-1 text-xs" @click="excluding = true">🙈 {{ t('Leave it out of the score') }}</button>
+      <div class="flex flex-wrap items-center gap-2">
+        <button v-if="!data.exclusion" class="btn-ghost !py-1 text-xs" @click="excluding = true">🙈 {{ t('Leave it out of the score') }}</button>
+        <MissionButton :slug="project.slug" kind="query" :target="hash" :missions="data.missions" />
+      </div>
     </div>
     <div v-if="data.exclusion" class="card mt-4 flex flex-wrap items-center justify-between gap-3 border-ink-700 p-4 text-sm">
       <div>

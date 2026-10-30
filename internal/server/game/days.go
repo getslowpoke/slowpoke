@@ -110,6 +110,46 @@ func (e *Engine) evaluateDays(ctx context.Context, p project.Project) error {
 	return nil
 }
 
+// IndexWindow is how far back the speed index on the panel looks. A full day always holds a peak
+// and a night, so the number does not depend on the hour it is read at.
+const IndexWindow = 24 * time.Hour
+
+// evaluateWindow scores the last 24 hours. Levels, records and streaks stay on closed calendar days.
+func (e *Engine) evaluateWindow(ctx context.Context, p project.Project) error {
+	now := e.Now()
+	snap, err := e.Metrics.Snapshot(ctx, p.ID, now.Add(-IndexWindow), now)
+	if err != nil {
+		return err
+	}
+	if snap.Hours == 0 {
+		_, err := e.DB.Q().Exec(ctx, "DELETE FROM score_window WHERE project_id = ?", p.ID)
+		return err
+	}
+	result := score.Compute(p.Settings, snap)
+	partial := result.Partial || snap.Hours < p.Settings.Score.MinHoursForFullDay
+	components, _ := json.Marshal(result.Components)
+	var total any
+	if result.Total != nil {
+		total = *result.Total
+	}
+	_, err = e.DB.Q().Exec(ctx, `INSERT INTO score_window (project_id, score, partial, hours, components, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+		ON CONFLICT (project_id) DO UPDATE SET score = excluded.score, partial = excluded.partial, hours = excluded.hours,
+		components = excluded.components, updated_at = excluded.updated_at`,
+		p.ID, total, partial, snap.Hours, string(components), now.Unix())
+	return err
+}
+
+// CurrentScore is the speed index as the panel shows it: the last 24 hours, or the latest day
+// before the engine has scored a window.
+func CurrentScore(ctx context.Context, q store.Q, projectID int64) *float64 {
+	var score *float64
+	if err := q.Row(ctx, "SELECT score FROM score_window WHERE project_id = ?", projectID).Scan(&score); err == nil && score != nil {
+		return score
+	}
+	_ = q.Row(ctx, "SELECT score FROM score_days WHERE project_id = ? ORDER BY day DESC LIMIT 1", projectID).Scan(&score)
+	return score
+}
+
 // levelUp celebrates the first full day at a level never reached before.
 func (e *Engine) levelUp(ctx context.Context, q store.Q, p project.Project, day string, dayScore float64) error {
 	var best sql.NullFloat64

@@ -50,6 +50,15 @@ const pages = [
   ['report', `/projects/${slug}/report`],
   ['tv', `/tv/${slug}`],
 ]
+// The welcome tour opens on the first visit of a browser, once: it must open, close with Escape,
+// and then stay closed on every page after (or it would cover all the screenshots below).
+current = 'welcome tour'
+await page.goto(`${base}/projects/${slug}`, { waitUntil: 'networkidle0' })
+if (!(await page.$('[role=dialog]'))) problems.push('welcome tour: did not open on the first visit')
+await page.keyboard.press('Escape')
+await page.goto(`${base}/projects/${slug}/slow`, { waitUntil: 'networkidle0' })
+if (await page.$('[role=dialog]')) problems.push('welcome tour: opened again after being closed')
+
 const results = []
 for (const [vw, vh] of [[1440, 1000], [390, 844]]) {
 await page.setViewport({ width: vw, height: vh, deviceScaleFactor: 1 })

@@ -168,3 +168,54 @@ func TestExcludingAQueryClosesItsOwnMissions(t *testing.T) {
 		t.Fatalf("%d missions left open", open)
 	}
 }
+
+// Excluding "GET /buy-sell-contract/" left "POST /buy-sell-contract/" open as a regression on
+// a real install: the same path under another method is what the dialog must offer next.
+func TestSamePathTellsTheOtherMethodsOfAnEndpoint(t *testing.T) {
+	cases := []struct {
+		a, b string
+		want bool
+	}{
+		{"GET /buy-sell-contract/", "POST /buy-sell-contract/", true},
+		{"GET /orders/{order}", "DELETE /orders/:id", true},
+		{"GET /orders/{id}", "GET /orders/{id}", false}, // the same endpoint, not another one
+		{"GET /orders", "GET /orders/{id}", false},
+		{"GET /", "POST /scanner", false},
+		{"GET", "POST", false},
+	}
+	for _, c := range cases {
+		if got := SamePath(c.a, c.b); got != c.want {
+			t.Errorf("SamePath(%q, %q) = %v", c.a, c.b, got)
+		}
+	}
+}
+
+// A php-fpm stall whose deepest frame is an outbound call is time spent waiting on somebody
+// else's API: in a real install "curl_exec() vendor/guzzlehttp/..." stayed a regression after every
+// endpoint calling that API had been left out.
+func TestOutboundFrameTellsAWaitOnAnotherService(t *testing.T) {
+	yes := []string{
+		"curl_exec() vendor/guzzlehttp/guzzle/src/Handler/CurlHandler.php:85",
+		"curl_multi_exec() vendor/guzzlehttp/guzzle/src/Handler/CurlMultiHandler.php:159",
+		"curl_multi_select() vendor/guzzlehttp/guzzle/src/Handler/CurlMultiHandler.php:180",
+		"SoapClient->__doRequest() app/Services/Ade.php:40",
+		"stream_socket_client() vendor/symfony/http-client/Response/NativeResponse.php:200",
+		"fsockopen() app/Legacy/Http.php:12",
+	}
+	no := []string{
+		"PDOStatement->execute() vendor/laravel/framework/src/Illuminate/Database/Connection.php:421",
+		"sleep() app/Jobs/Wait.php:3",
+		"(empty stack)",
+		"",
+	}
+	for _, f := range yes {
+		if !OutboundFrame(f) {
+			t.Errorf("%q is a wait on another service", f)
+		}
+	}
+	for _, f := range no {
+		if OutboundFrame(f) {
+			t.Errorf("%q is not a wait on another service", f)
+		}
+	}
+}

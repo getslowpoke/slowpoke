@@ -36,8 +36,9 @@ curl -s http://localhost:8080/healthz   # {"ok":true,"version":"…"}
 
 ## 2. Create the first user and a project
 
-Open http://localhost:8080. The first visit asks for a name, an email and a password (at least 10 characters): this
-user is the administrator.
+Open http://localhost:8080. The first visit asks for the **setup code**, a name, an email and a password (at least 10
+characters): this user is the administrator. The code is in the server's log, and
+`docker compose exec server slowpoke-server setup-code` prints it again; the one-line installer prints it for you.
 
 Create a project for your application and pick its **time zone**: days, levels and the weekly digest follow it.
 
